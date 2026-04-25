@@ -11,8 +11,10 @@ const BOARD_META: Record<string, { name: string; description: string }> = {
   photo: { name: '사진', description: '사진과 이미지 공유' },
   sports: { name: '스포츠', description: '스포츠 이야기' },
   study: { name: '공부', description: '학습, 질문, 정보 공유' },
+  travel: { name: '여행', description: '여행지, 일정, 숙소와 교통 이야기' },
+  movie: { name: '영화/드라마', description: '영화, 드라마, OTT 감상과 추천' },
   random: { name: '잡담', description: '자유 주제 게시판' },
-  all: { name: '전체', description: '모든 게시판 스레드 모아보기' },
+  all: { name: '전체', description: '모든 게시판의 스레드 모아보기' },
 };
 
 export function getBoardDisplayMeta(board: Pick<BoardSummary, 'slug' | 'name' | 'description'>) {

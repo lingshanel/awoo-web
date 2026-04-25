@@ -14,6 +14,9 @@ const boardAccentMap: Record<string, string> = {
   photo: 'var(--board-photo)',
   sports: 'var(--board-sports)',
   study: 'var(--board-study)',
+  travel: 'var(--board-travel)',
+  movie: 'var(--board-movie)',
+  all: 'var(--board-all)',
 };
 
 export function BoardCard({ board }: { board: BoardSummary }) {
@@ -29,7 +32,7 @@ export function BoardCard({ board }: { board: BoardSummary }) {
     >
       <div className="board-card-tag">/{board.slug}/</div>
       <div className="board-card-name">{meta.name}</div>
-      <div className="board-card-desc">{meta.description || '새 게시판입니다.'}</div>
+      <div className="board-card-desc">{meta.description || '게시판입니다.'}</div>
       <div className="board-card-meta">
         <span>THREADS {board.threadCount}</span>
         <span>{board.slug === 'game' || board.slug === 'random' ? 'HOT' : 'LIVE'}</span>
