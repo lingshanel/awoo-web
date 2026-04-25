@@ -1,0 +1,200 @@
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
+import { createThread, deleteUpload, uploadImages } from '@/lib/api';
+import { getBoardDisplayMeta } from '@/lib/board-meta';
+import { CaptchaBox } from './captcha-box';
+import { UploadPicker } from './upload-picker';
+
+type BoardOption = {
+  slug: string;
+  name: string;
+};
+
+export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [boardSlug, setBoardSlug] = useState(
+    searchParams.get('board') ?? boards[0]?.slug ?? 'game',
+  );
+  const [authorName, setAuthorName] = useState('');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [isSage, setIsSage] = useState(false);
+  const [hasSpoiler, setHasSpoiler] = useState(false);
+  const [hasNsfw, setHasNsfw] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadedNames, setUploadedNames] = useState<string[]>([]);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaCode, setCaptchaCode] = useState('');
+  const [captchaValid, setCaptchaValid] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    const board = searchParams.get('board');
+    if (board) {
+      setBoardSlug(board);
+    }
+  }, [searchParams]);
+
+  function removeFile(index: number) {
+    setFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    setStatus(null);
+
+    if (!captchaValid) {
+      setPending(false);
+      setError('보안 문자가 일치하지 않습니다.');
+      return;
+    }
+
+    let uploadedIds: number[] = [];
+
+    try {
+      const uploads =
+        files.length > 0 ? await uploadImages(files) : { items: [], total: 0 };
+
+      uploadedIds = uploads.items.map((item) => item.id);
+      setUploadedNames(uploads.items.map((item) => item.originalName));
+
+      const result = await createThread({
+        boardSlug,
+        authorName: authorName || undefined,
+        title,
+        content,
+        isSage,
+        hasSpoiler,
+        hasNsfw,
+        attachmentIds: uploadedIds,
+        captchaToken: captchaCode,
+        captchaAnswer,
+      });
+
+      setStatus('스레드가 생성되었습니다. 상세 페이지로 이동합니다.');
+      router.push(`/threads/${result.item.id}`);
+      router.refresh();
+    } catch (submitError) {
+      await Promise.all(uploadedIds.map((id) => deleteUpload(id).catch(() => undefined)));
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : '글 작성 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form className="form-card" onSubmit={onSubmit}>
+      <div className="form-header">
+        <div className="form-header-icon">/{boardSlug}/</div>
+        <div className="form-header-info">
+          <h1>새 스레드 작성</h1>
+          <p>// 익명으로 게시됩니다 · POST_ANONYMOUSLY</p>
+        </div>
+      </div>
+      <div className="form-body">
+        <div className="form-grid">
+          {error ? <div className="status-box error">{error}</div> : null}
+          {status ? <div className="status-box success">{status}</div> : null}
+          <div className="inline-fields">
+            <div className="field">
+              <label>게시판</label>
+              <select value={boardSlug} onChange={(event) => setBoardSlug(event.target.value)}>
+                {boards.map((board) => (
+                  <option key={board.slug} value={board.slug}>
+                    /{board.slug}/ {getBoardDisplayMeta(board).name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>이름</label>
+              <input
+                value={authorName}
+                onChange={(event) => setAuthorName(event.target.value)}
+                placeholder="비워두면 익명"
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label>제목</label>
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="스레드 제목"
+              required
+            />
+          </div>
+          <div className="field">
+            <label>본문</label>
+            <textarea
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder={'> 로 시작하면 greentext로 표시됩니다.\n>>123 형식으로 답글 대상을 적을 수 있습니다.'}
+              required
+            />
+          </div>
+          <UploadPicker
+            files={files}
+            uploadedNames={uploadedNames}
+            onChange={setFiles}
+            onRemove={removeFile}
+          />
+          <div className="checkbox-row">
+            <label className="checkbox-item">
+              <input
+                checked={isSage}
+                type="checkbox"
+                onChange={(event) => setIsSage(event.target.checked)}
+              />
+              sage
+            </label>
+            <label className="checkbox-item">
+              <input
+                checked={hasSpoiler}
+                type="checkbox"
+                onChange={(event) => setHasSpoiler(event.target.checked)}
+              />
+              스포일러
+            </label>
+            <label className="checkbox-item">
+              <input
+                checked={hasNsfw}
+                type="checkbox"
+                onChange={(event) => setHasNsfw(event.target.checked)}
+              />
+              성인 주의
+            </label>
+          </div>
+          <CaptchaBox
+            onValidityChange={({ answer, code, isValid }) => {
+              setCaptchaAnswer(answer);
+              setCaptchaCode(code);
+              setCaptchaValid(isValid);
+            }}
+          />
+          <div className="status-box">
+            개인정보, 불법 촬영물, 불법 콘텐츠는 금지됩니다. 업로드 실패나 작성 실패 시 첨부 이미지는
+            자동 정리됩니다.
+          </div>
+          <div className="toolbar">
+            <div className="muted-row">짧은 시간 반복 작성은 서버에서 제한됩니다.</div>
+            <button className="submit-btn primary" disabled={pending} type="submit">
+              {pending ? '등록 중...' : '스레드 등록'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}

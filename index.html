@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>위험/유/ - 익명 게시판</title>
+<meta name="description" content="위험/유/ - 한국 익명 이미지보드. 자유롭게 이야기하세요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep:    #080c10;
+    --bg-panel:   #0d1117;
+    --bg-card:    #111820;
+    --bg-hover:   #1a2535;
+    --accent:     #00ffe1;
+    --accent2:    #ff3f6e;
+    --accent3:    #ffd700;
+    --text-main:  #c8d6e5;
+    --text-muted: #5a7a94;
+    --text-dim:   #2e4a60;
+    --border:     #1e3048;
+    --border-glow:#00ffe133;
+    --font-mono:  'Share Tech Mono', monospace;
+    --font-kr:    'Noto Sans KR', sans-serif;
+    --font-head:  'Orbitron', sans-serif;
+    --ad-bg:      #0a1520;
+    --ad-border:  #1c3350;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-main);
+    font-family: var(--font-kr);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: #fff; text-decoration: underline; }
+
+  /* ─── LAYOUT ─── */
+  .site-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  /* ─── HEADER ─── */
+  .site-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    text-shadow: 0 0 20px var(--accent);
+    text-decoration: none;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .header-nav a {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .header-nav a:hover {
+    color: var(--accent);
+    border-color: var(--border-glow);
+    background: rgba(0,255,225,0.04);
+    text-decoration: none;
+  }
+
+  .hamburger {
+    display: none;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 2px;
+  }
+
+  /* ─── TOP AD BANNER ─── */
+  .ad-banner-top {
+    background: var(--ad-bg);
+    border-bottom: 1px solid var(--ad-border);
+    text-align: center;
+    padding: 8px 16px;
+  }
+
+  .ad-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ad-bg);
+    border: 1px dashed var(--ad-border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-radius: 2px;
+    position: relative;
+  }
+
+  .ad-slot::before {
+    content: 'AD';
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    font-size: 9px;
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  .ad-slot-top    { width: 100%; max-width: 728px; height: 90px; }
+  .ad-slot-side   { width: 160px; height: 600px; }
+  .ad-slot-side-sm{ width: 160px; height: 250px; }
+  .ad-slot-inline { width: 100%; height: 60px; }
+  .ad-slot-rect   { width: 300px; height: 250px; }
+
+  /* ─── MAIN CONTENT AREA ─── */
+  .page-body {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .page-body { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  .sidebar-widget {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px;
+  }
+
+  .sidebar-widget h3 {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  .board-quick-list { list-style: none; }
+  .board-quick-list li { margin: 3px 0; }
+  .board-quick-list a {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .board-quick-list a:hover {
+    color: var(--accent);
+    background: rgba(0,255,225,0.04);
+    text-decoration: none;
+  }
+  .board-quick-list .tag {
+    font-size: 10px;
+    color: var(--accent2);
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-row:last-child { border: none; }
+  .stat-row .val { color: var(--accent3); }
+
+  /* ─── MAIN SECTION ─── */
+  .main-content {}
+
+  /* ─── HERO ─── */
+  .hero {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 20px;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '위험/유/';
+    position: absolute;
+    bottom: -20px;
+    right: -10px;
+    font-family: var(--font-head);
+    font-size: 80px;
+    font-weight: 900;
+    color: rgba(0,255,225,0.03);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .hero-title {
+    font-family: var(--font-head);
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,255,225,0.4);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .hero-title span { color: var(--accent2); }
+
+  .hero-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  .news-ticker {
+    background: rgba(0,255,225,0.04);
+    border: 1px solid var(--border-glow);
+    border-radius: 2px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .news-ticker .label {
+    color: var(--accent);
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  /* ─── BOARD GRID ─── */
+  .section-header {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .board-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .board-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--card-accent, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .board-card:hover {
+    border-color: var(--border-glow);
+    background: var(--bg-hover);
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+
+  .board-card:hover::before { opacity: 1; }
+
+  .board-card-tag {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--card-accent, var(--accent));
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
+  .board-card-name {
+    font-size: 12px;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .board-card-meta {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 8px;
+  }
+
+  .board-card-meta .hot { color: var(--accent2); }
+
+  /* Board color themes */
+  .board-card.anime    { --card-accent: #ff6eb4; }
+  .board-card.tech     { --card-accent: #00ffe1; }
+  .board-card.cyber    { --card-accent: #a78bfa; }
+  .board-card.news     { --card-accent: #ffd700; }
+  .board-card.game     { --card-accent: #4ade80; }
+  .board-card.music    { --card-accent: #fb923c; }
+  .board-card.random   { --card-accent: #f472b6; }
+  .board-card.photo    { --card-accent: #38bdf8; }
+  .board-card.food     { --card-accent: #a3e635; }
+  .board-card.sports   { --card-accent: #f97316; }
+  .board-card.study    { --card-accent: #818cf8; }
+  .board-card.all      { --card-accent: #e2e8f0; }
+
+  /* ─── INLINE AD (between sections) ─── */
+  .ad-inline {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+
+  /* ─── RECENT THREADS ─── */
+  .thread-list { display: flex; flex-direction: column; gap: 1px; margin-bottom: 20px; }
+
+  .thread-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    transition: background 0.15s;
+  }
+
+  .thread-item:hover { background: var(--bg-hover); }
+
+  .thread-board-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    border: 1px solid var(--border-glow);
+    border-radius: 2px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+
+  .thread-title {
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 400;
+  }
+
+  .thread-title a { color: var(--text-main); }
+  .thread-title a:hover { color: var(--accent); }
+
+  .thread-meta {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .thread-replies {
+    color: var(--accent3);
+    font-weight: bold;
+  }
+
+  /* ─── FOOTER ─── */
+  .site-footer {
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* Footer ad strip */
+  .ad-banner-footer {
+    background: var(--ad-bg);
+    border-bottom: 1px solid var(--ad-border);
+    text-align: center;
+    padding: 8px 16px;
+  }
+
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+  }
+
+  .footer-col h4 {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .footer-col p, .footer-col li {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    list-style: none;
+  }
+
+  .footer-col a { color: var(--text-muted); font-size: 11px; }
+  .footer-col a:hover { color: var(--accent); }
+
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .footer-bottom p {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .footer-bottom .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ─── MOBILE NAV DRAWER ─── */
+  .mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+  }
+
+  .mobile-nav-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    height: 100%;
+    width: 260px;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    z-index: 201;
+    padding: 20px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s;
+  }
+
+  .mobile-nav-drawer.open { transform: translateX(0); }
+  .mobile-nav-overlay.open { display: block; }
+
+  .mobile-nav-drawer h3 {
+    font-family: var(--font-head);
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-nav-drawer ul { list-style: none; }
+  .mobile-nav-drawer li { border-bottom: 1px solid var(--border); }
+  .mobile-nav-drawer a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 4px;
+    font-size: 13px;
+    color: var(--text-main);
+  }
+
+  .mobile-nav-drawer a:hover { color: var(--accent); text-decoration: none; }
+
+  .drawer-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 28px; height: 28px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* ─── SEARCH BAR ─── */
+  .search-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .search-bar input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 8px 12px;
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-bar input::placeholder { color: var(--text-dim); }
+  .search-bar input:focus { border-color: var(--accent); }
+
+  .search-bar button {
+    background: rgba(0,255,225,0.08);
+    border: 1px solid var(--border-glow);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .search-bar button:hover {
+    background: rgba(0,255,225,0.15);
+  }
+
+  /* ─── MOBILE RESPONSIVE ─── */
+  @media (max-width: 640px) {
+    .header-nav { display: none; }
+    .hamburger { display: block; }
+
+    .hero { padding: 16px; }
+    .hero::after { display: none; }
+
+    .board-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .board-card { padding: 10px; }
+    .board-card-tag { font-size: 13px; }
+    .board-card-name { font-size: 11px; }
+
+    .thread-item {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+    }
+
+    .thread-meta {
+      grid-column: 2;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .ad-slot-top { height: 60px; }
+
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+
+    .logo { font-size: 16px; }
+  }
+
+  @media (max-width: 400px) {
+    .board-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ─── GLITCH ANIMATION on logo ─── */
+  @keyframes glitch {
+    0%, 90%, 100% { text-shadow: 0 0 20px var(--accent); }
+    91% { text-shadow: 3px 0 0 var(--accent2), -3px 0 0 var(--accent); }
+    93% { text-shadow: -3px 0 0 var(--accent2), 3px 0 0 var(--accent); }
+    95% { text-shadow: 0 0 20px var(--accent); }
+  }
+
+  .logo { animation: glitch 6s infinite; }
+
+  /* ─── SCROLL TO TOP BUTTON ─── */
+  #scrollTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    color: var(--accent);
+    width: 36px; height: 36px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 50;
+  }
+
+  #scrollTop.visible { opacity: 1; }
+  #scrollTop:hover { background: var(--bg-hover); }
+
+  /* ─── NOTICE BANNER ─── */
+  .notice {
+    background: rgba(255,63,110,0.08);
+    border: 1px solid rgba(255,63,110,0.25);
+    border-radius: 2px;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="/">위험<span>/유/</span></a>
+    <nav class="header-nav">
+      <a href="/anime">/애니/</a>
+      <a href="/tech">/기술/</a>
+      <a href="/cyber">/사이버/</a>
+      <a href="/game">/게임/</a>
+      <a href="/music">/음악/</a>
+      <a href="/news">/뉴스/</a>
+      <a href="/random">/랜덤/</a>
+      <a href="/all">전체</a>
+      <a href="/search">검색</a>
+    </nav>
+    <button class="hamburger" id="menuBtn" aria-label="메뉴 열기">☰</button>
+  </div>
+</header>
+
+<!-- ─── TOP AD BANNER ─── -->
+<!-- 상단 광고 (728x90 리더보드) -->
+<div class="ad-banner-top">
+  <div class="ad-slot ad-slot-top" id="ad-top">
+    <!-- Google AdSense / 광고 코드를 여기에 삽입하세요 -->
+    <!-- <ins class="adsbygoogle" ... ></ins> -->
+    [ 광고 영역 · 728×90 리더보드 ]
+  </div>
+</div>
+
+<!-- ─── MOBILE NAV DRAWER ─── -->
+<div class="mobile-nav-overlay" id="navOverlay"></div>
+<div class="mobile-nav-drawer" id="navDrawer">
+  <button class="drawer-close" id="drawerClose">✕</button>
+  <h3>위험/유/ 게시판</h3>
+  <ul>
+    <li><a href="/anime">🌸 /애니/ — 애니메이션 &amp; 만화</a></li>
+    <li><a href="/tech">💻 /기술/ — 기술 &amp; 개발</a></li>
+    <li><a href="/cyber">🌐 /사이버/ — 사이버펑크 라이프</a></li>
+    <li><a href="/game">🎮 /게임/ — 비디오 게임</a></li>
+    <li><a href="/music">🎵 /음악/ — 음악</a></li>
+    <li><a href="/news">📡 /뉴스/ — 뉴스 &amp; 시사</a></li>
+    <li><a href="/food">🍜 /먹방/ — 음식 &amp; 요리</a></li>
+    <li><a href="/photo">📷 /사진/ — 사진</a></li>
+    <li><a href="/sports">⚽ /스포츠/ — 스포츠</a></li>
+    <li><a href="/study">📚 /공부/ — 공부 &amp; 학습</a></li>
+    <li><a href="/random">🎲 /랜덤/ — 잡담</a></li>
+    <li><a href="/all">📋 전체 스레드 보기</a></li>
+  </ul>
+</div>
+
+<!-- ─── MAIN BODY ─── -->
+<div class="page-body">
+
+  <!-- ─── MAIN COLUMN ─── -->
+  <main class="main-content">
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="hero-title">위험<span>/유/</span></div>
+      <div class="hero-sub">// 익명 이미지보드 · 자유롭게 이야기하세요 · NO_IDENTITY_REQUIRED</div>
+      <div class="news-ticker">
+        <span class="label">[공지]</span>
+        <span id="ticker-text">규칙: 개인정보 금지 · 도배 금지 · 불법 콘텐츠 엄금. 즐거운 이야기 나눠요.</span>
+      </div>
+    </div>
+
+    <!-- 공지 예시 -->
+    <div class="notice">
+      ⚠ &nbsp; 신규 게시판 /공부/ 개설되었습니다. 시험 전날 밤샘하는 분들 모이세요.
+    </div>
+
+    <!-- 검색바 -->
+    <div class="search-bar">
+      <input type="text" placeholder="게시글 검색... (예: 애니 추천, 개발 질문)">
+      <button onclick="alert('검색 기능은 구현 예정입니다')">검색 ↗</button>
+    </div>
+
+    <!-- 게시판 목록 -->
+    <div class="section-header">게시판 목록</div>
+
+    <div class="board-grid">
+      <a class="board-card anime" href="/anime">
+        <div class="board-card-tag">/애니/</div>
+        <div class="board-card-name">애니메이션 &amp; 만화</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 248</span>
+          <span class="hot">🔥 HOT</span>
+        </div>
+      </a>
+      <a class="board-card tech" href="/tech">
+        <div class="board-card-tag">/기술/</div>
+        <div class="board-card-name">기술 &amp; 개발</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 192</span>
+        </div>
+      </a>
+      <a class="board-card cyber" href="/cyber">
+        <div class="board-card-tag">/사이버/</div>
+        <div class="board-card-name">사이버펑크 라이프</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 87</span>
+          <span class="hot">🔥 HOT</span>
+        </div>
+      </a>
+      <a class="board-card game" href="/game">
+        <div class="board-card-tag">/게임/</div>
+        <div class="board-card-name">비디오 게임</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 415</span>
+          <span class="hot">🔥 HOT</span>
+        </div>
+      </a>
+      <a class="board-card music" href="/music">
+        <div class="board-card-tag">/음악/</div>
+        <div class="board-card-name">음악</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 134</span>
+        </div>
+      </a>
+      <a class="board-card news" href="/news">
+        <div class="board-card-tag">/뉴스/</div>
+        <div class="board-card-name">뉴스 &amp; 시사</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 321</span>
+        </div>
+      </a>
+      <a class="board-card food" href="/food">
+        <div class="board-card-tag">/먹방/</div>
+        <div class="board-card-name">음식 &amp; 먹방</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 78</span>
+        </div>
+      </a>
+      <a class="board-card photo" href="/photo">
+        <div class="board-card-tag">/사진/</div>
+        <div class="board-card-name">사진 &amp; 이미지</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 56</span>
+        </div>
+      </a>
+      <a class="board-card sports" href="/sports">
+        <div class="board-card-tag">/스포츠/</div>
+        <div class="board-card-name">스포츠</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 203</span>
+          <span class="hot">🔥 HOT</span>
+        </div>
+      </a>
+      <a class="board-card study" href="/study">
+        <div class="board-card-tag">/공부/</div>
+        <div class="board-card-name">공부 &amp; 학습</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 44</span>
+          <span style="color:#818cf8">✨ NEW</span>
+        </div>
+      </a>
+      <a class="board-card random" href="/random">
+        <div class="board-card-tag">/랜덤/</div>
+        <div class="board-card-name">잡담 &amp; 자유</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 892</span>
+          <span class="hot">🔥 HOT</span>
+        </div>
+      </a>
+      <a class="board-card all" href="/all">
+        <div class="board-card-tag">/전체/</div>
+        <div class="board-card-name">모든 게시판 보기</div>
+        <div class="board-card-meta">
+          <span>🧵 스레드 2,674</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- ─── 인라인 광고 (게시판 목록 아래) ─── -->
+    <!-- 미드 광고 (반응형 배너) -->
+    <div class="ad-inline" id="ad-mid">
+      <!-- Google AdSense 반응형 코드 삽입 위치 -->
+      <div class="ad-slot ad-slot-inline" style="max-width:728px;">
+        [ 광고 영역 · 728×60 배너 (반응형) ]
+      </div>
+    </div>
+
+    <!-- 최근 스레드 -->
+    <div class="section-header">최근 스레드</div>
+
+    <div class="thread-list">
+      <div class="thread-item">
+        <div class="thread-board-tag">/게임/</div>
+        <div class="thread-title"><a href="#">요즘 혼자 즐기기 좋은 오픈월드 게임 추천해줘</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 48</span>
+          <span>2분 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/애니/</div>
+        <div class="thread-title"><a href="#">2025년 1분기 애니 총평 - 뭐가 제일 좋았음?</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 127</span>
+          <span>15분 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/기술/</div>
+        <div class="thread-title"><a href="#">Rust vs Go 실무에서 어느 게 더 씀? 스타트업 기준으로</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 83</span>
+          <span>32분 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/랜덤/</div>
+        <div class="thread-title"><a href="#">새벽 3시에 여기 오는 사람 손</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 241</span>
+          <span>1시간 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/뉴스/</div>
+        <div class="thread-title"><a href="#">AI 관련 법안 국회 통과됐는데 어떻게 생각함?</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 56</span>
+          <span>2시간 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/사이버/</div>
+        <div class="thread-title"><a href="#">내 홈서버 셋업 공유함 - 미니PC로 NAS 구축기</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 34</span>
+          <span>3시간 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/음악/</div>
+        <div class="thread-title"><a href="#">요즘 빠져있는 로파이 / 시티팝 플리 공유</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 19</span>
+          <span>4시간 전</span>
+        </div>
+      </div>
+      <div class="thread-item">
+        <div class="thread-board-tag">/공부/</div>
+        <div class="thread-title"><a href="#">수능 D-200 같이 달려볼 사람 - 일일 인증 스레드</a></div>
+        <div class="thread-meta">
+          <span class="thread-replies">↩ 72</span>
+          <span>5시간 전</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 아카이브 링크 -->
+    <div style="text-align:center; margin: 16px 0;">
+      <a href="/archive" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+        📦 아카이브 스레드 보기 →
+      </a>
+    </div>
+
+  </main>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+
+    <!-- 사이드 광고 (160x600 스카이스크래퍼) -->
+    <div class="sidebar-widget" style="padding: 8px; text-align: center;" id="ad-side">
+      <!-- Google AdSense 사이드 광고 삽입 위치 -->
+      <div class="ad-slot ad-slot-side">
+        [ 광고<br>160×600<br>스카이스크래퍼 ]
+      </div>
+    </div>
+
+    <!-- 빠른 게시판 목록 -->
+    <div class="sidebar-widget">
+      <h3>// 게시판</h3>
+      <ul class="board-quick-list">
+        <li><a href="/anime"><span class="tag">/애니/</span>애니메이션</a></li>
+        <li><a href="/tech"><span class="tag">/기술/</span>기술</a></li>
+        <li><a href="/cyber"><span class="tag">/사이버/</span>사이버펑크</a></li>
+        <li><a href="/game"><span class="tag">/게임/</span>게임</a></li>
+        <li><a href="/music"><span class="tag">/음악/</span>음악</a></li>
+        <li><a href="/news"><span class="tag">/뉴스/</span>뉴스</a></li>
+        <li><a href="/food"><span class="tag">/먹방/</span>먹방</a></li>
+        <li><a href="/photo"><span class="tag">/사진/</span>사진</a></li>
+        <li><a href="/sports"><span class="tag">/스포츠/</span>스포츠</a></li>
+        <li><a href="/study"><span class="tag">/공부/</span>공부</a></li>
+        <li><a href="/random"><span class="tag">/랜덤/</span>잡담</a></li>
+      </ul>
+    </div>
+
+    <!-- 사이트 통계 -->
+    <div class="sidebar-widget">
+      <h3>// 통계</h3>
+      <div class="stat-row"><span>활성 스레드</span><span class="val">2,674</span></div>
+      <div class="stat-row"><span>총 게시글</span><span class="val">61,203</span></div>
+      <div class="stat-row"><span>오늘 게시글</span><span class="val">847</span></div>
+      <div class="stat-row"><span>아카이브</span><span class="val">109,845</span></div>
+      <div class="stat-row"><span>접속자</span><span class="val">382</span></div>
+    </div>
+
+    <!-- 사이드 소형 광고 (160x250) -->
+    <div class="sidebar-widget" style="padding: 8px; text-align: center;" id="ad-side-sm">
+      <div class="ad-slot ad-slot-side-sm">
+        [ 광고<br>160×250<br>사각형 ]
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer class="site-footer">
+
+  <!-- 푸터 상단 광고 -->
+  <div class="ad-banner-footer" id="ad-footer">
+    <!-- 푸터 광고 배너 삽입 위치 -->
+    <div class="ad-slot ad-slot-top">
+      [ 광고 영역 · 728×90 · 푸터 리더보드 ]
+    </div>
+  </div>
+
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>// 위험/유/</h4>
+      <p>한국 익명 이미지보드.</p>
+      <p>누구나 자유롭게 이야기할 수 있는 공간입니다.</p>
+      <p style="margin-top:8px;">
+        <a href="https://github.com/">GitHub ↗</a>
+      </p>
+    </div>
+    <div class="footer-col">
+      <h4>// 게시판</h4>
+      <ul>
+        <li><a href="/anime">/애니/ — 애니메이션</a></li>
+        <li><a href="/tech">/기술/ — 기술</a></li>
+        <li><a href="/game">/게임/ — 게임</a></li>
+        <li><a href="/random">/랜덤/ — 잡담</a></li>
+        <li><a href="/all">전체 보기</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>// 링크</h4>
+      <ul>
+        <li><a href="/rules">이용규칙</a></li>
+        <li><a href="/faq">FAQ</a></li>
+        <li><a href="/archive">아카이브</a></li>
+        <li><a href="/search">게시글 검색</a></li>
+        <li><a href="/report">신고하기</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>// 광고 문의</h4>
+      <p>광고 게재 및 제휴 문의:</p>
+      <p><a href="mailto:ad@example.com">ad@example.com</a></p>
+      <p style="margin-top:8px; font-size:10px; color: var(--text-dim);">
+        * 광고는 사이트 운영을 지원합니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© 2025 위험/유/ — 모든 게시물은 작성자 본인에게 책임이 있습니다.</p>
+    <div class="status">
+      <div class="status-dot"></div>
+      <span>SERVER ONLINE · awoo/1.0.0-KR</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── 스크롤 탑 버튼 ─── -->
+<button id="scrollTop" aria-label="맨 위로">↑</button>
+
+<script>
+  // 햄버거 메뉴
+  const menuBtn = document.getElementById('menuBtn');
+  const navDrawer = document.getElementById('navDrawer');
+  const navOverlay = document.getElementById('navOverlay');
+  const drawerClose = document.getElementById('drawerClose');
+
+  function openDrawer() {
+    navDrawer.classList.add('open');
+    navOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    navDrawer.classList.remove('open');
+    navOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  menuBtn.addEventListener('click', openDrawer);
+  drawerClose.addEventListener('click', closeDrawer);
+  navOverlay.addEventListener('click', closeDrawer);
+
+  // 스크롤 탑 버튼
+  const scrollTopBtn = document.getElementById('scrollTop');
+  window.addEventListener('scroll', () => {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // 공지 텍스트 순환
+  const notices = [
+    '규칙: 개인정보 금지 · 도배 금지 · 불법 콘텐츠 엄금. 즐거운 이야기 나눠요.',
+    '새 게시판 /공부/ 개설! 공부 인증, 질문, 정보 공유 환영합니다.',
+    '신고 기능 추가됨. 부적절한 게시물은 우측 하단 신고 버튼을 이용하세요.',
+  ];
+  let noticeIdx = 0;
+  const tickerEl = document.getElementById('ticker-text');
+  setInterval(() => {
+    tickerEl.style.opacity = '0';
+    setTimeout(() => {
+      noticeIdx = (noticeIdx + 1) % notices.length;
+      tickerEl.textContent = notices[noticeIdx];
+      tickerEl.style.opacity = '1';
+    }, 400);
+  }, 5000);
+  tickerEl.style.transition = 'opacity 0.4s';
+</script>
+
+<!--
+  ════════════════════════════════════════════════════════
+  📌 광고 영역 안내 (개발자 참고)
+  ════════════════════════════════════════════════════════
+
+  광고 슬롯 위치 요약:
+  1. #ad-top       — 상단 헤더 아래, 728×90 리더보드
+  2. #ad-mid       — 게시판 목록 아래 인라인 배너
+  3. #ad-side      — 사이드바 상단, 160×600 스카이스크래퍼
+  4. #ad-side-sm   — 사이드바 하단, 160×250 사각형
+  5. #ad-footer    — 푸터 상단, 728×90 리더보드
+
+  Google AdSense 적용 방법:
+  - 각 .ad-slot div 안의 텍스트를 제거하고
+  - <ins class="adsbygoogle" ...> 코드를 삽입하세요.
+  - 스크립트는 <head> 또는 </body> 앞에 한 번만 추가.
+
+  모바일 대응:
+  - 모바일에서는 사이드바 광고 숨김 (CSS @media 처리됨)
+  - 상단/인라인/푸터 광고는 모바일에서도 노출됨
+  - AdSense 반응형 광고 유닛 사용 권장
+  ════════════════════════════════════════════════════════
+-->
+
+</body>
+</html>

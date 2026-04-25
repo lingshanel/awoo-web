@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  REJECTED
+}
+
+enum ReportTargetType {
+  THREAD
+  POST
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+model Board {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  threads     Thread[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Thread {
+  id           Int          @id @default(autoincrement())
+  boardId      Int
+  title        String       @db.VarChar(100)
+  content      String       @db.VarChar(5000)
+  authorName   String?      @db.VarChar(20)
+  email        String?      @db.VarChar(255)
+  authorHash   String?      @db.VarChar(64)
+  authorIpHash String?      @db.VarChar(128)
+  viewCount    Int          @default(0)
+  replyCount   Int          @default(0)
+  likeCount    Int          @default(0)
+  isPinned     Boolean      @default(false)
+  isLocked     Boolean      @default(false)
+  isDeleted    Boolean      @default(false)
+  isSage       Boolean      @default(false)
+  hasSpoiler   Boolean      @default(false)
+  hasNsfw      Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  bumpedAt     DateTime     @default(now())
+  board        Board        @relation(fields: [boardId], references: [id])
+  posts        Post[]
+  attachments  Attachment[]
+  reports      Report[]
+  reactions    Reaction[]
+
+  @@index([boardId, bumpedAt(sort: Desc)])
+  @@index([boardId, createdAt(sort: Desc)])
+}
+
+model Post {
+  id           Int          @id @default(autoincrement())
+  threadId      Int
+  parentPostId Int?
+  content      String       @db.VarChar(3000)
+  authorName   String?      @db.VarChar(20)
+  email        String?      @db.VarChar(255)
+  authorHash   String?      @db.VarChar(64)
+  authorIpHash String?      @db.VarChar(128)
+  likeCount    Int          @default(0)
+  isSage       Boolean      @default(false)
+  isDeleted    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  thread       Thread       @relation(fields: [threadId], references: [id])
+  parentPost   Post?        @relation("PostToPost", fields: [parentPostId], references: [id])
+  childPosts   Post[]       @relation("PostToPost")
+  attachments  Attachment[]
+  reports      Report[]
+  reactions    Reaction[]
+
+  @@index([threadId, createdAt(sort: Asc)])
+}
+
+model Attachment {
+  id           Int      @id @default(autoincrement())
+  threadId      Int?
+  postId       Int?
+  storageKey   String
+  originalName String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  thumbnailKey String?
+  createdAt    DateTime @default(now())
+  thread       Thread?  @relation(fields: [threadId], references: [id])
+  post         Post?    @relation(fields: [postId], references: [id])
+}
+
+model Report {
+  id             Int              @id @default(autoincrement())
+  targetType     ReportTargetType
+  targetId       Int
+  threadId       Int?
+  postId         Int?
+  reason         String           @db.VarChar(1000)
+  reporterIpHash String?          @db.VarChar(128)
+  status         ReportStatus     @default(PENDING)
+  createdAt      DateTime         @default(now())
+  resolvedAt     DateTime?
+  thread         Thread?          @relation(fields: [threadId], references: [id])
+  post           Post?            @relation(fields: [postId], references: [id])
+
+  @@index([threadId])
+  @@index([postId])
+}
+
+model Reaction {
+  id           Int          @id @default(autoincrement())
+  targetType   ReportTargetType
+  targetId     Int
+  threadId     Int?
+  postId       Int?
+  reactionType ReactionType
+  actorHash    String?      @db.VarChar(64)
+  createdAt    DateTime     @default(now())
+  thread       Thread?      @relation(fields: [threadId], references: [id])
+  post         Post?        @relation(fields: [postId], references: [id])
+
+  @@index([threadId])
+  @@index([postId])
+}

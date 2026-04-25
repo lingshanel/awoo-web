@@ -1,0 +1,142 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { RequestMeta } from 'src/common/request/request-meta';
+import { AntiSpamService } from 'src/common/security/anti-spam.service';
+import { buildPagination, getSkip } from 'src/common/utils/pagination';
+import { createAuthorHash } from 'src/common/utils/request-identity';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { ThreadPostsQueryDto } from './dto/thread-posts-query.dto';
+
+@Injectable()
+export class PostsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly antiSpamService: AntiSpamService,
+  ) {}
+
+  async getPosts(threadId: number, query: ThreadPostsQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const orderBy =
+      query.sort === 'latest'
+        ? [{ createdAt: 'desc' as const }]
+        : query.sort === 'likes'
+          ? [{ likeCount: 'desc' as const }, { createdAt: 'asc' as const }]
+          : [{ createdAt: 'asc' as const }];
+
+    const [posts, total] = await this.prisma.$transaction([
+      this.prisma.post.findMany({
+        where: {
+          threadId,
+          isDeleted: false,
+        },
+        include: {
+          attachments: true,
+        },
+        orderBy,
+        skip: getSkip(page, limit),
+        take: limit,
+      }),
+      this.prisma.post.count({
+        where: {
+          threadId,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    return {
+      threadId,
+      query,
+      items: posts.map((post) => ({
+        id: post.id,
+        parentPostId: post.parentPostId,
+        content: post.content,
+        authorName: post.authorName ?? '익명',
+        authorHash: post.authorHash,
+        participantKey: post.authorIpHash,
+        likeCount: post.likeCount,
+        createdAt: post.createdAt,
+        attachments: post.attachments.map((attachment) => ({
+          id: attachment.id,
+          url: attachment.storageKey,
+          thumbnailUrl: attachment.thumbnailKey,
+          originalName: attachment.originalName,
+          mimeType: attachment.mimeType,
+          size: attachment.size,
+          width: attachment.width,
+          height: attachment.height,
+        })),
+      })),
+      pagination: buildPagination(page, limit, total),
+    };
+  }
+
+  async createPost(threadId: number, dto: CreatePostDto, meta: RequestMeta) {
+    this.antiSpamService.enforceCooldown(`post:${meta.actorHash}`, 8_000, 2);
+
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+    });
+
+    if (!thread || thread.isDeleted) {
+      throw new NotFoundException(`Thread not found: ${threadId}`);
+    }
+
+    if (dto.parentPostId) {
+      const parentPost = await this.prisma.post.findFirst({
+        where: {
+          id: dto.parentPostId,
+          threadId,
+          isDeleted: false,
+        },
+      });
+
+      if (!parentPost) {
+        throw new NotFoundException(`Parent post not found: ${dto.parentPostId}`);
+      }
+    }
+
+    const authorHash = createAuthorHash(dto.authorName, dto.email);
+    const post = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.post.create({
+        data: {
+          threadId,
+          parentPostId: dto.parentPostId ?? null,
+          content: dto.content,
+          authorName: dto.authorName?.trim() || null,
+          email: dto.email?.trim() || null,
+          authorHash,
+          authorIpHash: meta.actorHash,
+          isSage: dto.isSage ?? false,
+          attachments: dto.attachmentIds?.length
+            ? {
+                connect: dto.attachmentIds.map((id) => ({ id })),
+              }
+            : undefined,
+        },
+      });
+
+      await tx.thread.update({
+        where: { id: threadId },
+        data: {
+          replyCount: {
+            increment: 1,
+          },
+          ...(dto.isSage
+            ? {}
+            : {
+                bumpedAt: new Date(),
+              }),
+        },
+      });
+
+      return created;
+    });
+
+    return {
+      message: 'Post created.',
+      item: post,
+    };
+  }
+}
