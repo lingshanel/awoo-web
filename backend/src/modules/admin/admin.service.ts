@@ -162,7 +162,21 @@ export class AdminService {
   }
 
   async getSummary() {
-    const [pendingReports, resolvedReports, activeThreads, hiddenThreads, activePosts, hiddenPosts] =
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [
+      pendingReports,
+      resolvedReports,
+      activeThreads,
+      hiddenThreads,
+      activePosts,
+      hiddenPosts,
+      todayThreads,
+      todayPosts,
+      todayReports,
+      activeBans,
+    ] =
       await this.prisma.$transaction([
         this.prisma.report.count({ where: { status: ReportStatus.PENDING } }),
         this.prisma.report.count({ where: { status: ReportStatus.RESOLVED } }),
@@ -170,6 +184,15 @@ export class AdminService {
         this.prisma.thread.count({ where: { isDeleted: true } }),
         this.prisma.post.count({ where: { isDeleted: false } }),
         this.prisma.post.count({ where: { isDeleted: true } }),
+        this.prisma.thread.count({ where: { createdAt: { gte: todayStart }, isDeleted: false } }),
+        this.prisma.post.count({ where: { createdAt: { gte: todayStart }, isDeleted: false } }),
+        this.prisma.report.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.adminBan.count({
+          where: {
+            revokedAt: null,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+        }),
       ]);
 
     return {
@@ -179,6 +202,10 @@ export class AdminService {
       hiddenThreads,
       activePosts,
       hiddenPosts,
+      todayThreads,
+      todayPosts,
+      todayReports,
+      activeBans,
     };
   }
 

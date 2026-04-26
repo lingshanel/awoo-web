@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LightboxGallery } from '@/components/lightbox-gallery';
+import { OwnerEditActions } from '@/components/owner-edit-actions';
 import { PostRichText, type RichTextReference } from '@/components/post-rich-text';
 import { ReactionControls } from '@/components/reaction-controls';
 import { ReplyForm } from '@/components/reply-form';
@@ -146,6 +148,32 @@ function sortDisplayPosts(posts: DisplayPost[], sort: PostSort) {
   });
 }
 
+export async function generateMetadata({ params }: Pick<ThreadPageProps, 'params'>): Promise<Metadata> {
+  const { id } = await params;
+  const threadId = Number(id);
+
+  if (Number.isNaN(threadId)) {
+    return {};
+  }
+
+  try {
+    const thread = await getThread(threadId);
+    const description = thread.content.replace(/\s+/g, ' ').slice(0, 140);
+
+    return {
+      title: `${thread.title} - AWOO/KR`,
+      description,
+      openGraph: {
+        title: thread.title,
+        description,
+        type: 'article',
+      },
+    };
+  } catch {
+    return {};
+  }
+}
+
 function buildPostTree(posts: DisplayPost[]) {
   const childrenByParent = new Map<number, DisplayPost[]>();
   const topLevelPosts: DisplayPost[] = [];
@@ -222,6 +250,12 @@ function PostCard({
         <Link className="reaction-btn" href={`/threads/${threadId}?replyTo=${post.id}#reply-form`}>
           답글
         </Link>
+        <OwnerEditActions
+          target="post"
+          threadId={threadId}
+          postId={post.id}
+          content={post.content}
+        />
         <ReactionControls id={post.id} target="post" />
       </div>
       {childrenByParent
@@ -309,6 +343,12 @@ export default async function ThreadPage({ params, searchParams }: ThreadPagePro
                 {thread.hasNsfw ? <div className="reaction-btn">성인 주의</div> : null}
               </div>
               <ReactionControls id={thread.id} target="thread" />
+              <OwnerEditActions
+                target="thread"
+                threadId={thread.id}
+                title={thread.title}
+                content={thread.content}
+              />
             </div>
           </article>
 

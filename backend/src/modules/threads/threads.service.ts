@@ -1,10 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AdminBanType } from '@prisma/client';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
+import { hashOwnerPassword, verifyOwnerPassword } from 'src/common/security/owner-password';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { createAuthorHash } from 'src/common/utils/request-identity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
+import { DeleteThreadDto } from './dto/delete-thread.dto';
+import { UpdateThreadDto } from './dto/update-thread.dto';
 import { toThreadDetail } from './threads.mapper';
 import { THREAD_INCLUDE } from './threads.types';
 
@@ -17,6 +20,7 @@ export class ThreadsService {
 
   async createThread(dto: CreateThreadDto, meta: RequestMeta) {
     this.antiSpamService.enforceCooldown(`thread:${meta.actorHash}`, 20_000);
+    this.antiSpamService.enforceContentQuality(`content:${meta.actorHash}`, `${dto.title}\n${dto.content}`);
 
     const board = await this.prisma.board.findUnique({
       where: { slug: dto.boardSlug },
@@ -33,6 +37,7 @@ export class ThreadsService {
         boardId: board.id,
         title: dto.title,
         content: dto.content,
+        editPasswordHash: hashOwnerPassword(dto.editPassword),
         authorName: dto.authorName?.trim() || null,
         email: dto.email?.trim() || null,
         authorHash,
@@ -101,6 +106,60 @@ export class ThreadsService {
     return {
       id,
       message: 'View counted.',
+    };
+  }
+
+  async updateThread(id: number, dto: UpdateThreadDto) {
+    const thread = await this.prisma.thread.findFirst({
+      where: { id, isDeleted: false },
+    });
+
+    if (!thread) {
+      throw new NotFoundException(`Thread not found: ${id}`);
+    }
+
+    if (!verifyOwnerPassword(dto.editPassword, thread.editPasswordHash)) {
+      throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
+    }
+
+    const updated = await this.prisma.thread.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        content: dto.content,
+      },
+      include: THREAD_INCLUDE,
+    });
+
+    return {
+      message: '스레드를 수정했습니다.',
+      item: toThreadDetail(updated),
+    };
+  }
+
+  async deleteThread(id: number, dto: DeleteThreadDto) {
+    const thread = await this.prisma.thread.findFirst({
+      where: { id, isDeleted: false },
+    });
+
+    if (!thread) {
+      throw new NotFoundException(`Thread not found: ${id}`);
+    }
+
+    if (!verifyOwnerPassword(dto.editPassword, thread.editPasswordHash)) {
+      throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
+    }
+
+    await this.prisma.thread.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+      },
+    });
+
+    return {
+      id,
+      message: '스레드를 삭제했습니다.',
     };
   }
 }

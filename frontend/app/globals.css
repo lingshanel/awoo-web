@@ -1134,6 +1134,22 @@ select {
   margin-top: 10px;
 }
 
+.owner-edit {
+  position: relative;
+}
+
+.owner-edit-panel {
+  width: min(420px, calc(100vw - 32px));
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(8, 12, 16, 0.98);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+}
+
 .reply-section-title {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -1560,6 +1576,13 @@ select {
 
 .policy-section p {
   margin: 0;
+  color: #8faec3;
+  line-height: 1.8;
+}
+
+.policy-list {
+  margin: 0;
+  padding-left: 18px;
   color: #8faec3;
   line-height: 1.8;
 }

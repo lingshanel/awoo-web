@@ -366,6 +366,22 @@ export function AdminPanel() {
           <span>숨김 대상</span>
           <strong>{(summary?.hiddenThreads ?? 0) + (summary?.hiddenPosts ?? 0)}</strong>
         </div>
+        <div className="admin-stat-card">
+          <span>오늘 스레드</span>
+          <strong>{summary?.todayThreads ?? '-'}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>오늘 댓글</span>
+          <strong>{summary?.todayPosts ?? '-'}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>오늘 신고</span>
+          <strong>{summary?.todayReports ?? '-'}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>활성 차단</span>
+          <strong>{summary?.activeBans ?? '-'}</strong>
+        </div>
       </section>
 
       <section className="admin-queue-header">

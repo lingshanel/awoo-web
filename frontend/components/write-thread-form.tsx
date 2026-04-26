@@ -19,6 +19,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
     searchParams.get('board') ?? boards[0]?.slug ?? 'game',
   );
   const [authorName, setAuthorName] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSage, setIsSage] = useState(false);
@@ -70,6 +71,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
         authorName: authorName || undefined,
         title,
         content,
+        editPassword,
         isSage,
         hasSpoiler,
         hasNsfw,
@@ -125,6 +127,19 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
                 placeholder="비워두면 익명"
               />
             </div>
+          </div>
+          <div className="field">
+            <label>수정/삭제 비밀번호</label>
+            <input
+              autoComplete="new-password"
+              minLength={4}
+              maxLength={40}
+              type="password"
+              value={editPassword}
+              onChange={(event) => setEditPassword(event.target.value)}
+              placeholder="나중에 직접 수정/삭제할 때 사용합니다."
+              required
+            />
           </div>
           <div className="field">
             <label>제목</label>

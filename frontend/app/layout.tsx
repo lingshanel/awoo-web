@@ -6,6 +6,14 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'awoo',
   description: '익명 보드 스타일 커뮤니티',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  openGraph: {
+    title: 'AWOO/KR',
+    description: '익명 보드 스타일 커뮤니티',
+    siteName: 'AWOO/KR',
+    locale: 'ko_KR',
+    type: 'website',
+  },
 };
 
 const navItems = [

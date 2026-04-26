@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { getRequestMeta } from 'src/common/request/get-request-meta';
 import { ThreadParamDto } from '../threads/dto/thread-param.dto';
 import { CreatePostDto } from './dto/create-post.dto';
+import { DeletePostDto } from './dto/delete-post.dto';
 import { ThreadPostsQueryDto } from './dto/thread-posts-query.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 
 @Controller('threads/:id/posts')
@@ -25,5 +27,23 @@ export class PostsController {
     @Req() request: Request,
   ) {
     return this.postsService.createPost(params.id, dto, getRequestMeta(request));
+  }
+
+  @Patch(':postId')
+  updatePost(
+    @Param() params: ThreadParamDto,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Body() dto: UpdatePostDto,
+  ) {
+    return this.postsService.updatePost(params.id, postId, dto);
+  }
+
+  @Delete(':postId')
+  deletePost(
+    @Param() params: ThreadParamDto,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Body() dto: DeletePostDto,
+  ) {
+    return this.postsService.deletePost(params.id, postId, dto);
   }
 }

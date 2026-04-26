@@ -19,6 +19,12 @@ const placements = [
   },
 ];
 
+const rejectExamples = [
+  '도박, 사행성, 불법 다운로드 유도',
+  '악성코드, 피싱, 과장된 투자 수익 광고',
+  '커뮤니티 분위기를 해치는 과도한 성인성 소재',
+];
+
 export default function AdvertisePage() {
   return (
     <div className="page-body">
@@ -57,9 +63,18 @@ export default function AdvertisePage() {
           <section className="policy-section">
             <h2>문의 방식</h2>
             <p>
-              광고 목적, 희망 기간, 랜딩 페이지, 소재 크기, 예산 범위를 함께 보내주시면 운영자가 검토합니다.
+              광고 목적, 희망 기간, 랜딩 페이지, 소재 크기, 예산 범위, 희망 카테고리를 함께 보내주시면 운영자가 검토합니다.
               실제 운영 전 전용 메일 주소를 연결할 예정입니다.
             </p>
+          </section>
+
+          <section className="policy-section">
+            <h2>받지 않는 광고</h2>
+            <ul className="policy-list">
+              {rejectExamples.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </section>
 
           <div className="revenue-actions">

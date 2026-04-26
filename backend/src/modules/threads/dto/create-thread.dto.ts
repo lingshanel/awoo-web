@@ -26,6 +26,11 @@ export class CreateThreadDto {
   email?: string;
 
   @IsString()
+  @MinLength(4)
+  @MaxLength(40)
+  editPassword!: string;
+
+  @IsString()
   @MinLength(1)
   @MaxLength(100)
   title!: string;

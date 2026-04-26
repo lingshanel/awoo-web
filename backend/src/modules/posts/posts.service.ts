@@ -2,11 +2,14 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { AdminBanType } from '@prisma/client';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
+import { hashOwnerPassword, verifyOwnerPassword } from 'src/common/security/owner-password';
 import { buildPagination, getSkip } from 'src/common/utils/pagination';
 import { createAuthorHash } from 'src/common/utils/request-identity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { DeletePostDto } from './dto/delete-post.dto';
 import { ThreadPostsQueryDto } from './dto/thread-posts-query.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
 export class PostsService {
@@ -75,6 +78,7 @@ export class PostsService {
 
   async createPost(threadId: number, dto: CreatePostDto, meta: RequestMeta) {
     this.antiSpamService.enforceCooldown(`post:${meta.actorHash}`, 8_000, 2);
+    this.antiSpamService.enforceContentQuality(`content:${meta.actorHash}`, dto.content);
 
     const thread = await this.prisma.thread.findUnique({
       where: { id: threadId },
@@ -106,6 +110,7 @@ export class PostsService {
           threadId,
           parentPostId: dto.parentPostId ?? null,
           content: dto.content,
+          editPasswordHash: hashOwnerPassword(dto.editPassword),
           authorName: dto.authorName?.trim() || null,
           email: dto.email?.trim() || null,
           authorHash,
@@ -157,5 +162,69 @@ export class PostsService {
     if (ban) {
       throw new ForbiddenException('운영 정책에 따라 작성이 제한되었습니다.');
     }
+  }
+
+  async updatePost(threadId: number, postId: number, dto: UpdatePostDto) {
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, threadId, isDeleted: false },
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post not found: ${postId}`);
+    }
+
+    if (!verifyOwnerPassword(dto.editPassword, post.editPasswordHash)) {
+      throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
+    }
+
+    const updated = await this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        content: dto.content,
+      },
+    });
+
+    return {
+      message: '댓글을 수정했습니다.',
+      item: {
+        id: updated.id,
+      },
+    };
+  }
+
+  async deletePost(threadId: number, postId: number, dto: DeletePostDto) {
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, threadId, isDeleted: false },
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post not found: ${postId}`);
+    }
+
+    if (!verifyOwnerPassword(dto.editPassword, post.editPasswordHash)) {
+      throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.post.update({
+        where: { id: postId },
+        data: {
+          isDeleted: true,
+        },
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: {
+          replyCount: {
+            decrement: 1,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      id: postId,
+      message: '댓글을 삭제했습니다.',
+    };
   }
 }

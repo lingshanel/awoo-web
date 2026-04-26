@@ -65,6 +65,7 @@ model Thread {
   content      String       @db.VarChar(5000)
   authorName   String?      @db.VarChar(20)
   email        String?      @db.VarChar(255)
+  editPasswordHash String?
   authorHash   String?      @db.VarChar(64)
   authorIpHash String?      @db.VarChar(128)
   viewCount    Int          @default(0)
@@ -96,6 +97,7 @@ model Post {
   content      String       @db.VarChar(3000)
   authorName   String?      @db.VarChar(20)
   email        String?      @db.VarChar(255)
+  editPasswordHash String?
   authorHash   String?      @db.VarChar(64)
   authorIpHash String?      @db.VarChar(128)
   likeCount    Int          @default(0)

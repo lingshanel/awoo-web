@@ -21,6 +21,11 @@ export class CreatePostDto {
   @MaxLength(255)
   email?: string;
 
+  @IsString()
+  @MinLength(4)
+  @MaxLength(40)
+  editPassword!: string;
+
   @IsOptional()
   @IsInt()
   @Min(1)

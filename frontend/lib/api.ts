@@ -150,6 +150,10 @@ export type AdminSummary = {
   hiddenThreads: number;
   activePosts: number;
   hiddenPosts: number;
+  todayThreads: number;
+  todayPosts: number;
+  todayReports: number;
+  activeBans: number;
 };
 
 export type AdminUser = {
@@ -267,6 +271,7 @@ export async function createThread(payload: {
   hasSpoiler?: boolean;
   hasNsfw?: boolean;
   attachmentIds?: number[];
+  editPassword: string;
   captchaToken: string;
   captchaAnswer: string;
 }) {
@@ -288,6 +293,7 @@ export async function createPost(
     authorName?: string;
     email?: string;
     parentPostId?: number;
+    editPassword: string;
     isSage?: boolean;
     attachmentIds?: number[];
   },
@@ -301,6 +307,57 @@ export async function createPost(
   });
 
   return handleResponse<{ item: { id: number } }>(response);
+}
+
+async function requestWithJsonBody<T>(url: string, method: string, payload: unknown) {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse<T>(response);
+}
+
+export async function updateThread(
+  id: number,
+  payload: { title: string; content: string; editPassword: string },
+) {
+  return requestWithJsonBody<{ item: ThreadDetail; message: string }>(
+    `${getApiBaseUrl()}/threads/${id}`,
+    'PATCH',
+    payload,
+  );
+}
+
+export async function deleteThread(id: number, editPassword: string) {
+  return requestWithJsonBody<{ id: number; message: string }>(
+    `${getApiBaseUrl()}/threads/${id}`,
+    'DELETE',
+    { editPassword },
+  );
+}
+
+export async function updatePost(
+  threadId: number,
+  postId: number,
+  payload: { content: string; editPassword: string },
+) {
+  return requestWithJsonBody<{ item: { id: number }; message: string }>(
+    `${getApiBaseUrl()}/threads/${threadId}/posts/${postId}`,
+    'PATCH',
+    payload,
+  );
+}
+
+export async function deletePost(threadId: number, postId: number, editPassword: string) {
+  return requestWithJsonBody<{ id: number; message: string }>(
+    `${getApiBaseUrl()}/threads/${threadId}/posts/${postId}`,
+    'DELETE',
+    { editPassword },
+  );
 }
 
 export async function uploadImages(files: File[]) {

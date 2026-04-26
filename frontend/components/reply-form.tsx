@@ -16,6 +16,7 @@ export function ReplyForm({
   const router = useRouter();
   const [content, setContent] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [captchaValid, setCaptchaValid] = useState(false);
   const [pending, setPending] = useState(false);
@@ -68,12 +69,14 @@ export function ReplyForm({
       await createPost(threadId, {
         content,
         authorName: authorName || undefined,
+        editPassword,
         parentPostId: replyTo?.id,
         attachmentIds: uploadedIds,
       });
 
       setContent('');
       setAuthorName('');
+      setEditPassword('');
       setFiles([]);
       router.push(`/threads/${threadId}`);
       router.refresh();
@@ -115,6 +118,19 @@ export function ReplyForm({
               value={authorName}
               onChange={(event) => setAuthorName(event.target.value)}
               placeholder="비워두면 익명"
+            />
+          </div>
+          <div className="field">
+            <label>수정/삭제 비밀번호</label>
+            <input
+              autoComplete="new-password"
+              minLength={4}
+              maxLength={40}
+              type="password"
+              value={editPassword}
+              onChange={(event) => setEditPassword(event.target.value)}
+              placeholder="나중에 직접 수정/삭제할 때 사용합니다."
+              required
             />
           </div>
           <div className="field">
