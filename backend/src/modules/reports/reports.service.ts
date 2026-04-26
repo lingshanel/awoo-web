@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReportTargetType } from '@prisma/client';
+import { AdminActionType, ReportStatus, ReportTargetType } from '@prisma/client';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -22,7 +22,7 @@ export class ReportsService {
       30_000,
     );
 
-    return this.prisma.report.create({
+    const report = await this.prisma.report.create({
       data: {
         targetType:
           targetType === 'thread' ? ReportTargetType.THREAD : ReportTargetType.POST,
@@ -31,6 +31,61 @@ export class ReportsService {
         postId: targetType === 'post' ? targetId : null,
         reason,
         reporterIpHash: meta.actorHash,
+      },
+    });
+
+    await this.autoHideIfNeeded(targetType, targetId);
+
+    return report;
+  }
+
+  private async autoHideIfNeeded(targetType: 'thread' | 'post', targetId: number) {
+    const threshold = Number(process.env.REPORT_AUTO_HIDE_THRESHOLD ?? 5);
+    const reportTargetType = targetType === 'thread' ? ReportTargetType.THREAD : ReportTargetType.POST;
+    const pendingCount = await this.prisma.report.count({
+      where: {
+        targetType: reportTargetType,
+        targetId,
+        status: ReportStatus.PENDING,
+      },
+    });
+
+    if (pendingCount < threshold) {
+      return;
+    }
+
+    if (targetType === 'thread') {
+      await this.prisma.thread.updateMany({
+        where: { id: targetId, isDeleted: false },
+        data: { isDeleted: true },
+      });
+    } else {
+      const post = await this.prisma.post.findUnique({ where: { id: targetId } });
+
+      if (post && !post.isDeleted) {
+        await this.prisma.$transaction([
+          this.prisma.post.update({
+            where: { id: targetId },
+            data: { isDeleted: true },
+          }),
+          this.prisma.thread.update({
+            where: { id: post.threadId },
+            data: {
+              replyCount: {
+                decrement: 1,
+              },
+            },
+          }),
+        ]);
+      }
+    }
+
+    await this.prisma.adminActionLog.create({
+      data: {
+        actionType: AdminActionType.AUTO_HIDE,
+        targetType: reportTargetType,
+        targetId,
+        reason: `신고 ${pendingCount}건 누적 자동 숨김`,
       },
     });
   }

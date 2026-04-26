@@ -9,7 +9,7 @@ const ALL_BOARD: BoardSummary = {
   id: 0,
   slug: 'all',
   name: '전체',
-  description: '모든 게시판 스레드 모아보기',
+  description: '모든 카테고리의 스레드 모아보기',
   threadCount: 0,
 };
 
@@ -33,31 +33,25 @@ export default async function HomePage() {
         </section>
 
         <div className="notice">
-          새 게시판과 공지사항이 열려 있습니다. 첫 글과 첫 댓글로 분위기를 만들어 보세요.
+          새 카테고리와 공지사항이 열려 있습니다. 첫 스레드와 첫 댓글로 분위기를 만들어 보세요.
         </div>
 
-        <div className="search-bar search-bar-static">
+        <form className="search-bar" action="/search">
           <input
-            aria-label="통합 검색 준비 중"
-            placeholder="통합 검색은 다음 단계에서 연결될 예정입니다."
-            readOnly
+            aria-label="스레드 검색어"
+            name="q"
+            placeholder="제목이나 본문으로 스레드 검색"
           />
-          <button disabled type="button">
-            준비 중
+          <button type="submit">
+            검색
           </button>
-        </div>
+        </form>
 
-        <div className="section-header">게시판 목록</div>
+        <div className="section-header">카테고리 목록</div>
         <div className="board-grid">
           {displayBoards.map((board) => (
             <BoardCard key={board.slug} board={board} />
           ))}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-          <div className="ad-slot ad-slot-inline" style={{ maxWidth: 728 }}>
-            [ 광고 영역 / 728x60 배너 ]
-          </div>
         </div>
 
         <div className="section-header">최근 스레드</div>
@@ -71,7 +65,7 @@ export default async function HomePage() {
               <div className="thread-num">#00</div>
               <div>
                 <div className="thread-title">아직 등록된 스레드가 없습니다.</div>
-                <div className="thread-preview">`/write`에서 첫 글을 작성해 보세요.</div>
+                <div className="thread-preview">`/write`에서 첫 스레드를 작성해 보세요.</div>
               </div>
               <div className="thread-thumb-col">
                 <div className="thumb-placeholder">[]</div>
@@ -82,7 +76,7 @@ export default async function HomePage() {
 
         <div style={{ textAlign: 'center', margin: '16px 0' }}>
           <Link className="plain-link center-link" href="/boards/all?sort=latest">
-            전체 게시판 스레드 보기
+            전체 스레드 보기
           </Link>
         </div>
       </main>
@@ -92,7 +86,7 @@ export default async function HomePage() {
           <div className="ad-slot ad-slot-side">[ 광고 160x250 ]</div>
         </div>
         <div className="sidebar-widget">
-          <h3>// 게시판</h3>
+          <h3>// 카테고리</h3>
           <ul className="board-quick-list">
             {displayBoards.map((board) => (
               <li key={board.slug}>
@@ -107,7 +101,7 @@ export default async function HomePage() {
         <div className="sidebar-widget">
           <h3>// 통계</h3>
           <div className="stat-row">
-            <span>활성 게시판</span>
+            <span>활성 카테고리</span>
             <span className="val">{boards.total}</span>
           </div>
           <div className="stat-row">

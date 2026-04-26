@@ -153,6 +153,21 @@ export class BoardsService {
       board: {
         isActive: true,
       },
+      ...(query.q
+        ? {
+            OR: [
+              { title: { contains: query.q, mode: 'insensitive' } },
+              { content: { contains: query.q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(query.media === 'images'
+        ? {
+            attachments: {
+              some: {},
+            },
+          }
+        : {}),
     };
 
     const [threads, total] = await this.prisma.$transaction([

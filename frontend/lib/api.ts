@@ -6,6 +6,27 @@ function getApiBaseUrl() {
   return typeof window === 'undefined' ? SERVER_API_BASE_URL : CLIENT_API_BASE_URL;
 }
 
+function getCookieValue(name: string) {
+  if (typeof document === 'undefined') {
+    return undefined;
+  }
+
+  return document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+}
+
+function getAdminHeaders() {
+  const csrfToken = getCookieValue('awoo_admin_csrf');
+
+  return {
+    'Content-Type': 'application/json',
+    ...(csrfToken ? { 'x-csrf-token': decodeURIComponent(csrfToken) } : {}),
+  };
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
@@ -89,6 +110,78 @@ export type ReportItem = {
   reason: string;
   status: string;
   createdAt: string;
+  resolvedAt?: string | null;
+  thread?: {
+    id: number;
+    title: string;
+    content: string;
+    authorHash?: string | null;
+    authorIpHash?: string | null;
+    isDeleted: boolean;
+    createdAt: string;
+    board: {
+      slug: string;
+      name: string;
+    };
+  } | null;
+  post?: {
+    id: number;
+    content: string;
+    threadId: number;
+    authorHash?: string | null;
+    authorIpHash?: string | null;
+    isDeleted: boolean;
+    createdAt: string;
+    thread: {
+      id: number;
+      title: string;
+      board: {
+        slug: string;
+        name: string;
+      };
+    };
+  } | null;
+};
+
+export type AdminSummary = {
+  pendingReports: number;
+  resolvedReports: number;
+  activeThreads: number;
+  hiddenThreads: number;
+  activePosts: number;
+  hiddenPosts: number;
+};
+
+export type AdminUser = {
+  id: number;
+  username: string;
+  role: string;
+};
+
+export type AdminActionLogItem = {
+  id: number;
+  actionType: string;
+  targetType?: string | null;
+  targetId?: number | null;
+  reason?: string | null;
+  createdAt: string;
+  user?: {
+    username: string;
+    role: string;
+  } | null;
+};
+
+export type AdminBanItem = {
+  id: number;
+  banType: 'AUTHOR_HASH' | 'IP_HASH';
+  valueHash: string;
+  reason: string;
+  expiresAt?: string | null;
+  revokedAt?: string | null;
+  createdAt: string;
+  createdBy?: {
+    username: string;
+  } | null;
 };
 
 export async function getBoards() {
@@ -120,9 +213,24 @@ export async function getRecentThreads(
   sort: 'latest' | 'popular' | 'views' = 'latest',
   limit = 8,
   page = 1,
+  options: { q?: string; media?: 'all' | 'images' } = {},
 ) {
+  const params = new URLSearchParams({
+    sort,
+    limit: String(limit),
+    page: String(page),
+  });
+
+  if (options.q) {
+    params.set('q', options.q);
+  }
+
+  if (options.media && options.media !== 'all') {
+    params.set('media', options.media);
+  }
+
   const response = await fetch(
-    `${getApiBaseUrl()}/boards/recent/threads?sort=${sort}&limit=${limit}&page=${page}`,
+    `${getApiBaseUrl()}/boards/recent/threads?${params.toString()}`,
     {
       cache: 'no-store',
     },
@@ -250,12 +358,96 @@ export async function reportTarget(
   return handleResponse<{ id: number; status: string }>(response);
 }
 
-export async function getAdminReports(adminKey: string) {
-  const response = await fetch(`${getApiBaseUrl()}/admin/reports`, {
-    cache: 'no-store',
+export async function adminLogin(username: string, password: string) {
+  const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
+    method: 'POST',
     headers: {
-      'x-admin-key': adminKey,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ username, password }),
+  });
+
+  return handleResponse<{ user: AdminUser; message: string }>(response);
+}
+
+export async function adminLogout() {
+  const response = await fetch(`${getApiBaseUrl()}/admin/logout`, {
+    method: 'POST',
+    headers: getAdminHeaders(),
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
+export async function getAdminMe() {
+  const response = await fetch(`${getApiBaseUrl()}/admin/me`, {
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ user: AdminUser }>(response);
+}
+
+export async function getAdminSummary() {
+  const response = await fetch(`${getApiBaseUrl()}/admin/summary`, {
+    cache: 'no-store',
+  });
+
+  return handleResponse<AdminSummary>(response);
+}
+
+export async function getAdminLogs() {
+  const response = await fetch(`${getApiBaseUrl()}/admin/logs`, {
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ items: AdminActionLogItem[]; total: number }>(response);
+}
+
+export async function getAdminBans() {
+  const response = await fetch(`${getApiBaseUrl()}/admin/bans`, {
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ items: AdminBanItem[]; total: number }>(response);
+}
+
+export async function createAdminBan(payload: {
+  banType: 'AUTHOR_HASH' | 'IP_HASH';
+  valueHash: string;
+  reason: string;
+  expiresInHours?: number;
+}) {
+  const response = await fetch(`${getApiBaseUrl()}/admin/bans`, {
+    method: 'POST',
+    headers: getAdminHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  return handleResponse<{ item: AdminBanItem; message: string }>(response);
+}
+
+export async function revokeAdminBan(id: number) {
+  const response = await fetch(`${getApiBaseUrl()}/admin/bans/${id}/revoke`, {
+    method: 'POST',
+    headers: getAdminHeaders(),
+  });
+
+  return handleResponse<{ item: AdminBanItem; message: string }>(response);
+}
+
+export async function changeAdminPassword(currentPassword: string, newPassword: string) {
+  const response = await fetch(`${getApiBaseUrl()}/admin/password`, {
+    method: 'POST',
+    headers: getAdminHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  return handleResponse<{ message: string }>(response);
+}
+
+export async function getAdminReports(status = 'pending') {
+  const response = await fetch(`${getApiBaseUrl()}/admin/reports?status=${status}`, {
+    cache: 'no-store',
   });
 
   return handleResponse<{ items: ReportItem[]; total: number }>(response);
@@ -264,15 +456,11 @@ export async function getAdminReports(adminKey: string) {
 export async function adminHideTarget(
   target: 'thread' | 'post',
   id: number,
-  adminKey: string,
   reason?: string,
 ) {
   const response = await fetch(`${getApiBaseUrl()}/admin/${target}s/${id}/hide`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-key': adminKey,
-    },
+    headers: getAdminHeaders(),
     body: JSON.stringify({ reason }),
   });
 
@@ -281,15 +469,11 @@ export async function adminHideTarget(
 
 export async function adminResolveReport(
   id: number,
-  adminKey: string,
   hideTarget: boolean,
 ) {
   const response = await fetch(`${getApiBaseUrl()}/admin/reports/${id}/resolve`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-key': adminKey,
-    },
+    headers: getAdminHeaders(),
     body: JSON.stringify({ hideTarget }),
   });
 

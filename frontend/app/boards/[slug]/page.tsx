@@ -19,7 +19,7 @@ const ALL_BOARD: BoardSummary = {
   id: 0,
   slug: 'all',
   name: '전체',
-  description: '모든 게시판 스레드 모아보기',
+  description: '모든 카테고리의 스레드 모아보기',
   threadCount: 0,
 };
 
@@ -66,17 +66,17 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
             <div className="board-stats">
               <div className="board-stat">
                 <span className="val">{data.board.threadCount}</span>
-                <span>THREADS</span>
+                <span>스레드</span>
               </div>
               <div className="board-stat">
                 <span className="val">{data.pagination.total}</span>
-                <span>VISIBLE</span>
+                <span>표시 중</span>
               </div>
               <div className="board-stat">
                 <span className="val">
                   {sort === 'latest' ? 'NEW' : sort === 'popular' ? 'HOT' : 'VIEW'}
                 </span>
-                <span>SORT</span>
+                <span>정렬</span>
               </div>
             </div>
           </section>
@@ -111,8 +111,8 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
               <div className="thread-card">
                 <div className="thread-num">#00</div>
                 <div>
-                  <div className="thread-title">아직 게시물이 없습니다.</div>
-                  <div className="thread-preview">첫 스레드를 작성해서 게시판을 시작해 보세요.</div>
+                  <div className="thread-title">아직 스레드가 없습니다.</div>
+                  <div className="thread-preview">첫 스레드를 작성해서 카테고리를 시작해 보세요.</div>
                 </div>
                 <div className="thread-thumb-col">
                   <div className="thumb-placeholder">[]</div>
@@ -122,7 +122,7 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
           </div>
 
           {data.pagination.totalPages > 1 ? (
-            <nav className="pagination" aria-label="게시판 페이지 이동">
+            <nav className="pagination" aria-label="스레드 페이지 이동">
               <Link
                 className={`toolbar-button ${page <= 1 ? 'disabled' : ''}`}
                 href={buildBoardHref(slug, sort, Math.max(1, page - 1))}
@@ -160,7 +160,7 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
             </ul>
           </div>
           <div className="sidebar-widget">
-            <h3>// 게시판 이동</h3>
+            <h3>// 카테고리 이동</h3>
             <ul className="board-quick-list">
               {sidebarBoards.map((board) => (
                 <li key={board.slug}>

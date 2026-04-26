@@ -34,7 +34,7 @@ export function BoardCard({ board }: { board: BoardSummary }) {
       <div className="board-card-name">{meta.name}</div>
       <div className="board-card-desc">{meta.description || '게시판입니다.'}</div>
       <div className="board-card-meta">
-        <span>THREADS {board.threadCount}</span>
+        <span>스레드 {board.threadCount}</span>
         <span>{board.slug === 'game' || board.slug === 'random' ? 'HOT' : 'LIVE'}</span>
       </div>
     </Link>

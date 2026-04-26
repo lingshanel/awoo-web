@@ -86,7 +86,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : '글 작성 중 오류가 발생했습니다.',
+          : '스레드 작성 중 오류가 발생했습니다.',
       );
     } finally {
       setPending(false);
@@ -99,7 +99,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
         <div className="form-header-icon">/{boardSlug}/</div>
         <div className="form-header-info">
           <h1>새 스레드 작성</h1>
-          <p>// 익명으로 게시됩니다 · POST_ANONYMOUSLY</p>
+          <p>// 익명으로 게시합니다 · POST_ANONYMOUSLY</p>
         </div>
       </div>
       <div className="form-body">
@@ -140,7 +140,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder={'> 로 시작하면 greentext로 표시됩니다.\n>>123 형식으로 답글 대상을 적을 수 있습니다.'}
+              placeholder={'> 로 시작하면 greentext로 표시됩니다.\n>>123 형식으로 특정 댓글을 언급할 수 있습니다.'}
               required
             />
           </div>
@@ -184,8 +184,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
             }}
           />
           <div className="status-box">
-            개인정보, 불법 촬영물, 불법 콘텐츠는 금지됩니다. 업로드 실패나 작성 실패 시 첨부 이미지는
-            자동 정리됩니다.
+            개인정보, 불법 촬영물, 불법 콘텐츠는 금지됩니다. 업로드 실패나 작성 실패 시 첨부 이미지는 자동 정리됩니다.
           </div>
           <div className="toolbar">
             <div className="muted-row">짧은 시간 반복 작성은 서버에서 제한됩니다.</div>

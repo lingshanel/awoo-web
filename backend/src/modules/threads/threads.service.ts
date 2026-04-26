@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { AdminBanType } from '@prisma/client';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { createAuthorHash } from 'src/common/utils/request-identity';
@@ -26,6 +27,7 @@ export class ThreadsService {
     }
 
     const authorHash = createAuthorHash(dto.authorName, dto.email);
+    await this.ensureNotBanned(authorHash, meta.actorHash);
     const thread = await this.prisma.thread.create({
       data: {
         boardId: board.id,
@@ -51,6 +53,23 @@ export class ThreadsService {
       message: 'Thread created.',
       item: toThreadDetail(thread),
     };
+  }
+
+  private async ensureNotBanned(authorHash: string, ipHash: string) {
+    const ban = await this.prisma.adminBan.findFirst({
+      where: {
+        revokedAt: null,
+        OR: [
+          { banType: AdminBanType.AUTHOR_HASH, valueHash: authorHash },
+          { banType: AdminBanType.IP_HASH, valueHash: ipHash },
+        ],
+        AND: [{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }],
+      },
+    });
+
+    if (ban) {
+      throw new ForbiddenException('운영 정책에 따라 작성이 제한되었습니다.');
+    }
   }
 
   async getThread(id: number) {

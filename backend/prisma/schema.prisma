@@ -24,6 +24,28 @@ enum ReactionType {
   DISLIKE
 }
 
+enum AdminRole {
+  OWNER
+  MODERATOR
+}
+
+enum AdminActionType {
+  LOGIN
+  LOGOUT
+  HIDE_THREAD
+  HIDE_POST
+  RESOLVE_REPORT
+  CREATE_BAN
+  REVOKE_BAN
+  CHANGE_PASSWORD
+  AUTO_HIDE
+}
+
+enum AdminBanType {
+  AUTHOR_HASH
+  IP_HASH
+}
+
 model Board {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
@@ -138,4 +160,64 @@ model Reaction {
 
   @@index([threadId])
   @@index([postId])
+}
+
+model AdminUser {
+  id           Int              @id @default(autoincrement())
+  username     String           @unique @db.VarChar(40)
+  passwordHash String
+  role         AdminRole        @default(MODERATOR)
+  isActive     Boolean          @default(true)
+  failedLoginCount Int          @default(0)
+  lockedUntil  DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  sessions     AdminSession[]
+  actionLogs   AdminActionLog[]
+  bans         AdminBan[]
+}
+
+model AdminSession {
+  id           Int       @id @default(autoincrement())
+  tokenHash    String    @unique @db.VarChar(64)
+  csrfTokenHash String    @db.VarChar(64)
+  userId       Int
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  user         AdminUser @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AdminActionLog {
+  id          Int             @id @default(autoincrement())
+  userId      Int?
+  actionType  AdminActionType
+  targetType  String?         @db.VarChar(40)
+  targetId    Int?
+  reason      String?         @db.VarChar(1000)
+  ipHash      String?         @db.VarChar(128)
+  createdAt   DateTime        @default(now())
+  user        AdminUser?      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([targetType, targetId])
+}
+
+model AdminBan {
+  id          Int          @id @default(autoincrement())
+  banType     AdminBanType
+  valueHash   String       @db.VarChar(128)
+  reason      String       @db.VarChar(1000)
+  createdById Int?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  createdBy   AdminUser?   @relation(fields: [createdById], references: [id])
+
+  @@index([banType, valueHash])
+  @@index([createdById])
 }

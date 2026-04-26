@@ -4,19 +4,30 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'awoo',
-  description: '익명 보드 스타일 커뮤니티 프로토타입',
+  description: '익명 보드 스타일 커뮤니티',
 };
 
 const navItems = [
+  { href: '/boards/all?sort=latest', label: '최근' },
+  { href: '/boards/all?sort=popular', label: 'HOT' },
+  { href: '/search?media=images', label: '이미지' },
+  { href: '/search', label: '검색' },
+  { href: '/write', label: '작성' },
+];
+
+const footerBoards = [
   { href: '/boards/anime', label: '/애니/' },
-  { href: '/boards/tech', label: '/기술/' },
-  { href: '/boards/cyber', label: '/사이버/' },
   { href: '/boards/game', label: '/게임/' },
-  { href: '/boards/music', label: '/음악/' },
-  { href: '/boards/news', label: '/뉴스/' },
+  { href: '/boards/travel', label: '/여행/' },
+  { href: '/boards/movie', label: '/영화/드라마/' },
   { href: '/boards/random', label: '/잡담/' },
-  { href: '/write', label: '글쓰기' },
-  { href: '/admin', label: '관리' },
+];
+
+const policyLinks = [
+  { href: '/rules', label: '이용규칙' },
+  { href: '/privacy', label: '개인정보처리방침' },
+  { href: '/report-guide', label: '신고 안내' },
+  { href: '/contact', label: '문의/광고 문의' },
 ];
 
 export default function RootLayout({
@@ -40,23 +51,23 @@ export default function RootLayout({
           </div>
         </header>
         <div className="ad-banner-top">
-          <div className="ad-slot ad-slot-top">[ 광고 영역 · 728x90 리더보드 ]</div>
+          <div className="ad-slot ad-slot-top">[ 광고 영역 / 728x90 리더보드 ]</div>
         </div>
         <div className="shell">{children}</div>
         <footer className="footer">
           <div className="ad-banner-footer">
-            <div className="ad-slot ad-slot-top">[ 광고 영역 · 728x90 푸터 리더보드 ]</div>
+            <div className="ad-slot ad-slot-top">[ 광고 영역 / 728x90 푸터 리더보드 ]</div>
           </div>
           <div className="footer-inner">
             <div className="footer-col">
               <h4>// awoo/kr</h4>
               <p>익명 보드 스타일 커뮤니티.</p>
-              <p>프로토타입 단계의 시안으로 실제 운영용 구조를 바탕으로 만들고 있습니다.</p>
+              <p>신고와 운영 정책을 기반으로 공개 운영을 준비하고 있습니다.</p>
             </div>
             <div className="footer-col">
-              <h4>// Boards</h4>
+              <h4>// 카테고리</h4>
               <ul className="footer-links">
-                {navItems.slice(0, 7).map((item) => (
+                {footerBoards.map((item) => (
                   <li key={item.href}>
                     <Link href={item.href}>{item.label}</Link>
                   </li>
@@ -64,19 +75,32 @@ export default function RootLayout({
               </ul>
             </div>
             <div className="footer-col">
-              <h4>// Links</h4>
+              <h4>// 운영</h4>
+              <ul className="footer-links">
+                {policyLinks.map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href}>{item.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="footer-col">
+              <h4>// 링크</h4>
               <ul className="footer-links">
                 <li>
-                  <Link href="/write">새 글 작성</Link>
+                  <Link href="/boards/all?sort=latest">최근 스레드</Link>
                 </li>
                 <li>
-                  <Link href="/admin">관리자 화면</Link>
+                  <Link href="/search">검색</Link>
+                </li>
+                <li>
+                  <Link href="/write">스레드 작성</Link>
                 </li>
               </ul>
             </div>
           </div>
           <div className="footer-bottom">
-            <p>© 2026 awoo/kr · 게시물의 권리는 각 작성자에게 있습니다.</p>
+            <p>© 2026 awoo/kr · 스레드의 권리는 각 작성자에게 있습니다.</p>
             <div className="status">
               <span className="status-dot" />
               SERVER ONLINE · awoo/fullstack

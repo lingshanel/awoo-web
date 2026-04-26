@@ -14,7 +14,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:boards": "ts-node prisma/upsert-boards.ts"
+    "db:boards": "ts-node prisma/upsert-boards.ts",
+    "admin:create": "ts-node prisma/create-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

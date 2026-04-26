@@ -1,0 +1,7 @@
+ALTER TABLE "AdminUser" ADD COLUMN "failedLoginCount" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "AdminUser" ADD COLUMN "lockedUntil" TIMESTAMP(3);
+
+ALTER TABLE "AdminSession" ADD COLUMN "csrfTokenHash" VARCHAR(64) NOT NULL DEFAULT '';
+
+ALTER TABLE "AdminSession" ALTER COLUMN "csrfTokenHash" DROP DEFAULT;

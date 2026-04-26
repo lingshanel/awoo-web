@@ -1,0 +1,2 @@
+-- This migration was generated out of order during local development.
+-- Kept as a no-op so existing dev databases do not lose migration history.

@@ -13,8 +13,8 @@ const BOARD_META: Record<string, { name: string; description: string }> = {
   study: { name: '공부', description: '학습, 질문, 정보 공유' },
   travel: { name: '여행', description: '여행지, 일정, 숙소와 교통 이야기' },
   movie: { name: '영화/드라마', description: '영화, 드라마, OTT 감상과 추천' },
-  random: { name: '잡담', description: '자유 주제 게시판' },
-  all: { name: '전체', description: '모든 게시판의 스레드 모아보기' },
+  random: { name: '잡담', description: '자유 주제 카테고리' },
+  all: { name: '전체', description: '모든 카테고리의 스레드 모아보기' },
 };
 
 export function getBoardDisplayMeta(board: Pick<BoardSummary, 'slug' | 'name' | 'description'>) {
