@@ -165,6 +165,8 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 3px;
   background: var(--ad-bg);
   border: 1px dashed var(--ad-border);
   color: var(--text-dim);
@@ -173,6 +175,9 @@ select {
   letter-spacing: 1px;
   border-radius: 2px;
   position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
 .ad-slot::before {
@@ -183,6 +188,23 @@ select {
   font-size: 9px;
   color: var(--text-dim);
   opacity: 0.5;
+}
+
+.ad-slot:hover {
+  color: #9ab7cb;
+  border-color: rgba(0, 255, 225, 0.25);
+  background: rgba(0, 255, 225, 0.035);
+  text-decoration: none;
+}
+
+.ad-slot span {
+  color: #7899b3;
+}
+
+.ad-slot small {
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.08em;
 }
 
 .ad-slot-top {
@@ -1542,6 +1564,51 @@ select {
   line-height: 1.8;
 }
 
+.revenue-page {
+  gap: 18px;
+}
+
+.revenue-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.revenue-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 14px;
+  min-height: 142px;
+}
+
+.revenue-card span {
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: var(--accent3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.revenue-card h2 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.revenue-card p {
+  margin: 0;
+  color: #8faec3;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.revenue-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .admin-report-card {
   display: grid;
   gap: 10px;
@@ -1813,6 +1880,10 @@ select {
   }
 
   .admin-tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .revenue-card-grid {
     grid-template-columns: 1fr;
   }
 

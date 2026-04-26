@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AdSlot } from '@/components/ad-slot';
 import { BoardCard } from '@/components/board-card';
 import { NoticeTicker } from '@/components/notice-ticker';
 import { ThreadCard } from '@/components/thread-card';
@@ -83,7 +84,7 @@ export default async function HomePage() {
 
       <aside className="sidebar">
         <div className="sidebar-widget" style={{ padding: 8, textAlign: 'center' }}>
-          <div className="ad-slot ad-slot-side">[ 광고 160x250 ]</div>
+          <AdSlot variant="side" />
         </div>
         <div className="sidebar-widget">
           <h3>// 카테고리</h3>

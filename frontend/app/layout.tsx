@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AdSlot } from '@/components/ad-slot';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ const policyLinks = [
   { href: '/rules', label: '이용규칙' },
   { href: '/privacy', label: '개인정보처리방침' },
   { href: '/report-guide', label: '신고 안내' },
+  { href: '/advertise', label: '광고/제휴 안내' },
   { href: '/contact', label: '문의/광고 문의' },
 ];
 
@@ -51,12 +53,12 @@ export default function RootLayout({
           </div>
         </header>
         <div className="ad-banner-top">
-          <div className="ad-slot ad-slot-top">[ 광고 영역 / 728x90 리더보드 ]</div>
+          <AdSlot variant="top" />
         </div>
         <div className="shell">{children}</div>
         <footer className="footer">
           <div className="ad-banner-footer">
-            <div className="ad-slot ad-slot-top">[ 광고 영역 / 728x90 푸터 리더보드 ]</div>
+            <AdSlot variant="footer" />
           </div>
           <div className="footer-inner">
             <div className="footer-col">
