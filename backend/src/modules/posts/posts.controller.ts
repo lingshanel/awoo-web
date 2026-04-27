@@ -31,19 +31,19 @@ export class PostsController {
 
   @Patch(':postId')
   updatePost(
-    @Param() params: ThreadParamDto,
+    @Param('id', ParseIntPipe) threadId: number,
     @Param('postId', ParseIntPipe) postId: number,
     @Body() dto: UpdatePostDto,
   ) {
-    return this.postsService.updatePost(params.id, postId, dto);
+    return this.postsService.updatePost(threadId, postId, dto);
   }
 
   @Delete(':postId')
   deletePost(
-    @Param() params: ThreadParamDto,
+    @Param('id', ParseIntPipe) threadId: number,
     @Param('postId', ParseIntPipe) postId: number,
     @Body() dto: DeletePostDto,
   ) {
-    return this.postsService.deletePost(params.id, postId, dto);
+    return this.postsService.deletePost(threadId, postId, dto);
   }
 }
