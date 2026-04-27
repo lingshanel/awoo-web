@@ -42,64 +42,14 @@ function isAnonymousName(name: string) {
   return name === '익명' || /^익명\d+$/.test(name);
 }
 
-function getParticipantKey(
-  authorName: string,
-  participantKey: string | null | undefined,
-  authorHash: string | null | undefined,
-  fallbackKey: string,
-) {
-  if (!isAnonymousName(authorName)) {
-    return `named:${authorHash ?? fallbackKey}`;
-  }
-
-  return `anon:${participantKey ?? authorHash ?? fallbackKey}`;
-}
-
-function getAnonymousLabelMap(thread: ThreadDetail) {
-  const labelMap = new Map<string, string>();
-  let anonymousIndex = 1;
-
-  const threadParticipantKey = getParticipantKey(
-    thread.authorName,
-    thread.participantKey,
-    thread.authorHash,
-    `thread-${thread.id}`,
-  );
-
-  if (isAnonymousName(thread.authorName)) {
-    labelMap.set(threadParticipantKey, `익명${anonymousIndex}`);
-    anonymousIndex += 1;
-  }
-
+function getDisplayAuthorNames(thread: ThreadDetail) {
   const postAuthorNames = new Map<number, string>();
-  const chronologicalPosts = [...thread.posts].sort((left, right) => {
-    return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  });
 
-  for (const post of chronologicalPosts) {
-    const participantKey = getParticipantKey(
-      post.authorName,
-      post.participantKey,
-      post.authorHash,
-      `post-${post.id}`,
-    );
-
-    if (!isAnonymousName(post.authorName)) {
-      postAuthorNames.set(post.id, post.authorName);
-      continue;
-    }
-
-    if (!labelMap.has(participantKey)) {
-      labelMap.set(participantKey, `익명${anonymousIndex}`);
-      anonymousIndex += 1;
-    }
-
-    postAuthorNames.set(post.id, labelMap.get(participantKey)!);
+  for (const post of thread.posts) {
+    postAuthorNames.set(post.id, isAnonymousName(post.authorName) ? '익명' : post.authorName);
   }
 
-  const threadAuthorName = isAnonymousName(thread.authorName)
-    ? (labelMap.get(threadParticipantKey) ?? '익명1')
-    : thread.authorName;
+  const threadAuthorName = isAnonymousName(thread.authorName) ? '익명' : thread.authorName;
 
   return { threadAuthorName, postAuthorNames };
 }
@@ -295,7 +245,7 @@ export default async function ThreadPage({ params, searchParams }: ThreadPagePro
 
   try {
     const thread = await getThread(threadId);
-    const { threadAuthorName, postAuthorNames } = getAnonymousLabelMap(thread);
+    const { threadAuthorName, postAuthorNames } = getDisplayAuthorNames(thread);
     const displayPosts = buildDisplayPosts(thread, postAuthorNames);
     const postReferences = buildPostReferences(displayPosts);
     const postNumberById = new Map(displayPosts.map((post) => [post.id, post.displayNumber]));
