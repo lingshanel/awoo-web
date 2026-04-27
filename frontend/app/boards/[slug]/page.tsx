@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ThreadCard } from '@/components/thread-card';
+import { ThreadListWithViewMode } from '@/components/thread-list-with-view-mode';
 import { getBoardThreads, getBoards, getRecentThreads, type BoardSummary } from '@/lib/api';
 import { getBoardAccent, getBoardDisplayMeta } from '@/lib/board-meta';
 
@@ -138,10 +138,10 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
             )}
           </div>
 
-          <div className="thread-list">
-            {data.items.length ? (
-              data.items.map((thread) => <ThreadCard key={thread.id} thread={thread} />)
-            ) : (
+          {data.items.length ? (
+            <ThreadListWithViewMode threads={data.items} />
+          ) : (
+            <div className="thread-list">
               <div className="thread-card">
                 <div className="thread-num">#00</div>
                 <div>
@@ -152,8 +152,8 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
                   <div className="thumb-placeholder">[]</div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {data.pagination.totalPages > 1 ? (
             <nav className="pagination" aria-label="스레드 페이지 이동">

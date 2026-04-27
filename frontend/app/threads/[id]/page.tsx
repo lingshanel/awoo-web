@@ -7,6 +7,7 @@ import { PostRichText, type RichTextReference } from '@/components/post-rich-tex
 import { ReactionControls } from '@/components/reaction-controls';
 import { ReplyForm } from '@/components/reply-form';
 import { ThreadViewTracker } from '@/components/thread-view-tracker';
+import { UserThreadHistory } from '@/components/user-thread-history';
 import { getThread } from '@/lib/api';
 
 type ThreadPageProps = {
@@ -305,7 +306,7 @@ export default async function ThreadPage({ params, searchParams }: ThreadPagePro
 
     return (
       <div className="page-body">
-        <ThreadViewTracker threadId={thread.id} />
+        <ThreadViewTracker thread={thread} />
         <main className="main-column">
           <div className="news-ticker" style={{ marginBottom: 14 }}>
             <span className="label">[PATH]</span>
@@ -457,6 +458,9 @@ export default async function ThreadPage({ params, searchParams }: ThreadPagePro
                 </Link>
               </li>
             </ul>
+          </div>
+          <div className="sidebar-widget">
+            <UserThreadHistory />
           </div>
         </aside>
       </div>

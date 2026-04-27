@@ -326,6 +326,97 @@ select {
   color: var(--accent3);
 }
 
+.history-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.history-section {
+  display: grid;
+  gap: 8px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.history-header h3 {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.history-header button {
+  border: 1px solid var(--border);
+  background: rgba(0, 255, 225, 0.04);
+  color: #8ca8be;
+  border-radius: 2px;
+  padding: 3px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.history-header button:hover {
+  color: var(--accent);
+  border-color: var(--border-glow);
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.history-list a {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: #8aa8bf;
+}
+
+.history-list a:hover {
+  border-color: var(--border-glow);
+  background: rgba(0, 255, 225, 0.04);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.history-board,
+.history-meta,
+.history-empty {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.history-board {
+  color: var(--accent2);
+}
+
+.history-title {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-main);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.history-meta,
+.history-empty {
+  color: #7899b3;
+}
+
 .hero {
   background:
     radial-gradient(circle at top right, rgba(0, 255, 225, 0.1), transparent 32%),
@@ -594,6 +685,42 @@ select {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.thread-list-block {
+  display: grid;
+  gap: 8px;
+}
+
+.list-view-controls {
+  display: inline-flex;
+  justify-self: flex-end;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(8, 12, 16, 0.75);
+}
+
+.list-view-controls button {
+  min-width: 64px;
+  height: 32px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: #8ca8be;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.list-view-controls button:last-child {
+  border-right: 0;
+}
+
+.list-view-controls button:hover,
+.list-view-controls button.active {
+  background: rgba(0, 255, 225, 0.1);
+  color: var(--accent);
 }
 
 .thread-list-compact {

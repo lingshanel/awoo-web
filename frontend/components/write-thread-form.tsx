@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
 import { createThread, deleteUpload, uploadImages } from '@/lib/api';
 import { getBoardDisplayMeta } from '@/lib/board-meta';
+import { addOwnedThread } from '@/lib/thread-activity';
 import { CaptchaBox } from './captcha-box';
 import { UploadPicker } from './upload-picker';
 
@@ -81,6 +82,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
       });
 
       setStatus('스레드가 생성되었습니다. 상세 페이지로 이동합니다.');
+      addOwnedThread(result.item);
       router.push(`/threads/${result.item.id}`);
       router.refresh();
     } catch (submitError) {

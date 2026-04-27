@@ -1,19 +1,29 @@
 'use client';
 
 import { useEffect } from 'react';
-import { registerThreadView } from '@/lib/api';
+import { registerThreadView, type ThreadListItem } from '@/lib/api';
+import { addViewedThread } from '@/lib/thread-activity';
 
-export function ThreadViewTracker({ threadId }: { threadId: number }) {
+export function ThreadViewTracker({
+  thread,
+}: {
+  thread: Pick<
+    ThreadListItem,
+    'id' | 'board' | 'title' | 'replyCount' | 'viewCount' | 'likeCount' | 'createdAt'
+  >;
+}) {
   useEffect(() => {
-    const key = `thread-viewed:${threadId}`;
+    addViewedThread(thread);
+
+    const key = `thread-viewed:${thread.id}`;
 
     if (window.sessionStorage.getItem(key)) {
       return;
     }
 
     window.sessionStorage.setItem(key, '1');
-    void registerThreadView(threadId);
-  }, [threadId]);
+    void registerThreadView(thread.id);
+  }, [thread]);
 
   return null;
 }

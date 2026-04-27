@@ -3,6 +3,7 @@ import { AdSlot } from '@/components/ad-slot';
 import { BoardCard } from '@/components/board-card';
 import { NoticeTicker } from '@/components/notice-ticker';
 import { ThreadCard } from '@/components/thread-card';
+import { UserThreadHistory } from '@/components/user-thread-history';
 import { getBoards, getRecentThreads, type BoardSummary } from '@/lib/api';
 import { getBoardDisplayMeta } from '@/lib/board-meta';
 
@@ -85,6 +86,9 @@ export default async function HomePage() {
       <aside className="sidebar">
         <div className="sidebar-widget" style={{ padding: 8, textAlign: 'center' }}>
           <AdSlot variant="side" />
+        </div>
+        <div className="sidebar-widget">
+          <UserThreadHistory />
         </div>
         <div className="sidebar-widget">
           <h3>// 카테고리</h3>
