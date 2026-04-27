@@ -1,5 +1,22 @@
 import type { BoardSummary } from './api';
 
+export const BOARD_ACCENT_MAP: Record<string, string> = {
+  anime: 'var(--board-anime)',
+  tech: 'var(--board-tech)',
+  cyber: 'var(--board-cyber)',
+  game: 'var(--board-game)',
+  music: 'var(--board-music)',
+  news: 'var(--board-news)',
+  random: 'var(--board-random)',
+  food: 'var(--board-food)',
+  photo: 'var(--board-photo)',
+  sports: 'var(--board-sports)',
+  study: 'var(--board-study)',
+  travel: 'var(--board-travel)',
+  movie: 'var(--board-movie)',
+  all: 'var(--board-all)',
+};
+
 const BOARD_META: Record<string, { name: string; description: string }> = {
   anime: { name: '애니', description: '애니메이션과 만화 이야기' },
   tech: { name: '기술', description: '개발, 장비, 기술 잡담' },
@@ -16,6 +33,10 @@ const BOARD_META: Record<string, { name: string; description: string }> = {
   random: { name: '잡담', description: '자유 주제 카테고리' },
   all: { name: '전체', description: '모든 카테고리의 스레드 모아보기' },
 };
+
+export function getBoardAccent(slug: string) {
+  return BOARD_ACCENT_MAP[slug] ?? 'var(--accent)';
+}
 
 export function getBoardDisplayMeta(board: Pick<BoardSummary, 'slug' | 'name' | 'description'>) {
   const fallback = BOARD_META[board.slug];

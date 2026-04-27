@@ -488,8 +488,8 @@ select {
 .toolbar-button.active,
 .submit-btn.primary {
   color: var(--bg-deep);
-  background: var(--board-game);
-  border-color: rgba(74, 222, 128, 0.3);
+  background: var(--board-accent, var(--board-game));
+  border-color: color-mix(in srgb, var(--board-accent, var(--board-game)) 35%, transparent);
   font-weight: 700;
 }
 
@@ -604,16 +604,79 @@ select {
 .pagination {
   margin-top: 18px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .pagination-status {
   font-family: var(--font-mono);
   font-size: 12px;
   color: #8faec3;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-page,
+.pagination-arrow {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: rgba(0, 255, 225, 0.04);
+  color: #8faec3;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pagination-arrow {
+  color: var(--accent);
+}
+
+.pagination-page:hover,
+.pagination-page.active,
+.pagination-arrow:hover {
+  border-color: var(--border-glow);
+  background: rgba(0, 255, 225, 0.14);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.pagination-arrow.disabled,
+.pagination-arrow[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.pagination-ellipsis {
+  min-width: 26px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6f93ad;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .thread-card {
@@ -907,7 +970,7 @@ select {
   background:
     linear-gradient(180deg, rgba(15, 21, 29, 0.98), rgba(11, 17, 23, 0.96));
   border: 1px solid rgba(33, 52, 76, 0.95);
-  border-left: 3px solid var(--board-game);
+  border-left: 3px solid var(--board-accent, var(--board-game));
   border-radius: 2px;
   padding: 16px 20px;
   margin-bottom: 16px;
@@ -923,9 +986,9 @@ select {
   font-family: var(--font-head);
   font-size: 24px;
   font-weight: 700;
-  color: var(--board-game);
+  color: var(--board-accent, var(--board-game));
   letter-spacing: 2px;
-  text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--board-accent, var(--board-game)) 45%, transparent);
 }
 
 .board-name {

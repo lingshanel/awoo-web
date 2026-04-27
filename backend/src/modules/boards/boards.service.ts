@@ -6,6 +6,7 @@ import { toThreadListItem } from '../threads/threads.mapper';
 import { THREAD_INCLUDE } from '../threads/threads.types';
 import { BoardThreadsQueryDto } from './dto/board-threads-query.dto';
 import { RecentThreadsQueryDto } from './dto/recent-threads-query.dto';
+import { isHotThread } from './thread-heat';
 
 @Injectable()
 export class BoardsService {
@@ -40,6 +41,24 @@ export class BoardsService {
       { replyCount: 'desc' },
       { likeCount: 'desc' },
     ];
+  }
+
+  private sortHotThenLatest<T extends { isPinned: boolean; createdAt: Date } & Parameters<typeof isHotThread>[0]>(
+    threads: T[],
+  ) {
+    return [...threads].sort((a, b) => {
+      if (a.isPinned !== b.isPinned) {
+        return Number(b.isPinned) - Number(a.isPinned);
+      }
+
+      const aHot = isHotThread(a);
+      const bHot = isHotThread(b);
+      if (aHot !== bHot) {
+        return Number(bHot) - Number(aHot);
+      }
+
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
   }
 
   async getBoards() {
@@ -124,23 +143,36 @@ export class BoardsService {
         : {}),
     };
 
-    const orderBy = this.getThreadOrder(query.sort);
+    const [threads, total] =
+      query.sort === 'latest' || !query.sort
+        ? await this.prisma.$transaction([
+            this.prisma.thread.findMany({
+              where,
+              include: THREAD_INCLUDE,
+              orderBy: this.getThreadOrder('latest'),
+            }),
+            this.prisma.thread.count({ where }),
+          ])
+        : await this.prisma.$transaction([
+            this.prisma.thread.findMany({
+              where,
+              include: THREAD_INCLUDE,
+              orderBy: this.getThreadOrder(query.sort),
+              skip: getSkip(page, limit),
+              take: limit,
+            }),
+            this.prisma.thread.count({ where }),
+          ]);
 
-    const [threads, total] = await this.prisma.$transaction([
-      this.prisma.thread.findMany({
-        where,
-        include: THREAD_INCLUDE,
-        orderBy,
-        skip: getSkip(page, limit),
-        take: limit,
-      }),
-      this.prisma.thread.count({ where }),
-    ]);
+    const pageThreads =
+      query.sort === 'latest' || !query.sort
+        ? this.sortHotThenLatest(threads).slice(getSkip(page, limit), getSkip(page, limit) + limit)
+        : threads;
 
     return {
       board,
       query,
-      items: threads.map(toThreadListItem),
+      items: pageThreads.map(toThreadListItem),
       pagination: buildPagination(page, limit, total),
     };
   }
@@ -170,19 +202,34 @@ export class BoardsService {
         : {}),
     };
 
-    const [threads, total] = await this.prisma.$transaction([
-      this.prisma.thread.findMany({
-        where,
-        include: THREAD_INCLUDE,
-        orderBy: this.getThreadOrder(query.sort),
-        skip: getSkip(page, limit),
-        take: limit,
-      }),
-      this.prisma.thread.count({ where }),
-    ]);
+    const [threads, total] =
+      query.sort === 'latest' || !query.sort
+        ? await this.prisma.$transaction([
+            this.prisma.thread.findMany({
+              where,
+              include: THREAD_INCLUDE,
+              orderBy: this.getThreadOrder('latest'),
+            }),
+            this.prisma.thread.count({ where }),
+          ])
+        : await this.prisma.$transaction([
+            this.prisma.thread.findMany({
+              where,
+              include: THREAD_INCLUDE,
+              orderBy: this.getThreadOrder(query.sort),
+              skip: getSkip(page, limit),
+              take: limit,
+            }),
+            this.prisma.thread.count({ where }),
+          ]);
+
+    const pageThreads =
+      query.sort === 'latest' || !query.sort
+        ? this.sortHotThenLatest(threads).slice(getSkip(page, limit), getSkip(page, limit) + limit)
+        : threads;
 
     return {
-      items: threads.map(toThreadListItem),
+      items: pageThreads.map(toThreadListItem),
       pagination: buildPagination(page, limit, total),
     };
   }

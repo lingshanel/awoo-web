@@ -221,10 +221,57 @@ async function createTestData() {
   }
 }
 
+async function createPaginationTestThreads() {
+  const boards = await prisma.board.findMany({
+    select: { id: true, slug: true },
+    where: { isActive: true },
+    orderBy: { sortOrder: 'asc' },
+  });
+  const boardMap = new Map(boards.map((board) => [board.slug, board.id]));
+  const boardSlugs = ['tech', 'photo', 'random', 'anime', 'news'];
+  const baseTime = new Date('2026-04-27T00:00:00.000Z');
+
+  for (let index = 1; index <= 72; index += 1) {
+    const boardSlug = index <= 48 ? 'game' : boardSlugs[(index - 49) % boardSlugs.length];
+    const boardId = boardMap.get(boardSlug);
+
+    if (!boardId) {
+      continue;
+    }
+
+    const isHotSample = index % 9 === 0 || index % 14 === 0;
+    const createdAt = minutesAfter(baseTime, index * 7);
+    const replyCount = isHotSample ? 6 + (index % 5) : index % 4;
+    const viewCount = isHotSample ? 150 + index * 3 : 12 + index * 2;
+    const likeCount = isHotSample ? 5 + (index % 6) : index % 3;
+    const identity =
+      index % 5 === 0
+        ? makeNamedIdentity(`tester-${index}`, `tester-${index}@awoo.local`)
+        : makeAnonymousIdentity(`pagination-${boardSlug}-${index}`);
+
+    await prisma.thread.create({
+      data: {
+        boardId,
+        title: `[pagination test ${String(index).padStart(2, '0')}] ${boardSlug} sample thread`,
+        content:
+          'This seeded thread exists to verify hot-first ordering and multi-page navigation. ' +
+          `Sample number: ${index}.`,
+        ...identity,
+        replyCount,
+        viewCount,
+        likeCount,
+        createdAt,
+        bumpedAt: minutesAfter(createdAt, replyCount),
+      },
+    });
+  }
+}
+
 async function main() {
   await upsertBoards();
   await resetBoardContent();
   await createTestData();
+  await createPaginationTestThreads();
 }
 
 main()

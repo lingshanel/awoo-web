@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ThreadCard } from '@/components/thread-card';
 import { getBoardThreads, getBoards, getRecentThreads, type BoardSummary } from '@/lib/api';
-import { getBoardDisplayMeta } from '@/lib/board-meta';
+import { getBoardAccent, getBoardDisplayMeta } from '@/lib/board-meta';
 
 type BoardPageProps = {
   params: Promise<{ slug: string }>;
@@ -25,6 +25,35 @@ const ALL_BOARD: BoardSummary = {
 
 function buildBoardHref(slug: string, sort: string, page: number) {
   return `/boards/${slug}?sort=${sort}&page=${page}`;
+}
+
+function getPageItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages]);
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+    pages.add(pageNumber);
+  }
+
+  const orderedPages = [...pages].sort((a, b) => a - b);
+  const items: Array<number | 'ellipsis'> = [];
+
+  orderedPages.forEach((pageNumber, index) => {
+    const previousPage = orderedPages[index - 1];
+
+    if (previousPage && pageNumber - previousPage > 1) {
+      items.push('ellipsis');
+    }
+
+    items.push(pageNumber);
+  });
+
+  return items;
 }
 
 export default async function BoardPage({ params, searchParams }: BoardPageProps) {
@@ -53,7 +82,12 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
     const boardMeta = getBoardDisplayMeta(data.board);
 
     return (
-      <div className="page-body">
+      <div
+        className="page-body"
+        style={{
+          ['--board-accent' as string]: getBoardAccent(data.board.slug),
+        }}
+      >
         <main className="main-column">
           <section className="board-header">
             <div>
@@ -123,25 +157,47 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
 
           {data.pagination.totalPages > 1 ? (
             <nav className="pagination" aria-label="스레드 페이지 이동">
-              <Link
-                className={`toolbar-button ${page <= 1 ? 'disabled' : ''}`}
-                href={buildBoardHref(slug, sort, Math.max(1, page - 1))}
-                aria-disabled={page <= 1}
-                tabIndex={page <= 1 ? -1 : undefined}
-              >
-                이전
-              </Link>
+              <div className="pagination-controls">
+                <Link
+                  className={`pagination-arrow ${page <= 1 ? 'disabled' : ''}`}
+                  href={buildBoardHref(slug, sort, Math.max(1, page - 1))}
+                  aria-label="이전 페이지"
+                  aria-disabled={page <= 1}
+                  tabIndex={page <= 1 ? -1 : undefined}
+                >
+                  &lt;
+                </Link>
+                <div className="pagination-pages">
+                  {getPageItems(page, data.pagination.totalPages).map((pageItem, index) =>
+                    pageItem === 'ellipsis' ? (
+                      <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+                        ...
+                      </span>
+                    ) : (
+                  <Link
+                    key={pageItem}
+                    className={`pagination-page ${pageItem === page ? 'active' : ''}`}
+                    href={buildBoardHref(slug, sort, pageItem)}
+                    aria-current={pageItem === page ? 'page' : undefined}
+                  >
+                    {pageItem}
+                  </Link>
+                    ),
+                  )}
+                </div>
+                <Link
+                  className={`pagination-arrow ${page >= data.pagination.totalPages ? 'disabled' : ''}`}
+                  href={buildBoardHref(slug, sort, Math.min(data.pagination.totalPages, page + 1))}
+                  aria-label="다음 페이지"
+                  aria-disabled={page >= data.pagination.totalPages}
+                  tabIndex={page >= data.pagination.totalPages ? -1 : undefined}
+                >
+                  &gt;
+                </Link>
+              </div>
               <div className="pagination-status">
                 {page} / {data.pagination.totalPages} 페이지
               </div>
-              <Link
-                className={`toolbar-button ${page >= data.pagination.totalPages ? 'disabled' : ''}`}
-                href={buildBoardHref(slug, sort, Math.min(data.pagination.totalPages, page + 1))}
-                aria-disabled={page >= data.pagination.totalPages}
-                tabIndex={page >= data.pagination.totalPages ? -1 : undefined}
-              >
-                다음
-              </Link>
             </nav>
           ) : null}
         </main>

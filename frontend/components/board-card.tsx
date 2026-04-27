@@ -1,23 +1,6 @@
 import Link from 'next/link';
 import type { BoardSummary } from '@/lib/api';
-import { getBoardDisplayMeta } from '@/lib/board-meta';
-
-const boardAccentMap: Record<string, string> = {
-  anime: 'var(--board-anime)',
-  tech: 'var(--board-tech)',
-  cyber: 'var(--board-cyber)',
-  game: 'var(--board-game)',
-  music: 'var(--board-music)',
-  news: 'var(--board-news)',
-  random: 'var(--board-random)',
-  food: 'var(--board-food)',
-  photo: 'var(--board-photo)',
-  sports: 'var(--board-sports)',
-  study: 'var(--board-study)',
-  travel: 'var(--board-travel)',
-  movie: 'var(--board-movie)',
-  all: 'var(--board-all)',
-};
+import { getBoardAccent, getBoardDisplayMeta } from '@/lib/board-meta';
 
 export function BoardCard({ board }: { board: BoardSummary }) {
   const meta = getBoardDisplayMeta(board);
@@ -27,7 +10,7 @@ export function BoardCard({ board }: { board: BoardSummary }) {
       className="board-card"
       href={`/boards/${board.slug}`}
       style={{
-        ['--card-accent' as string]: boardAccentMap[board.slug] ?? 'var(--accent)',
+        ['--card-accent' as string]: getBoardAccent(board.slug),
       }}
     >
       <div className="board-card-tag">/{board.slug}/</div>
