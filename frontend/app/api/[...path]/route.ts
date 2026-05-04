@@ -10,8 +10,24 @@ async function proxy(request: NextRequest, path: string[]) {
   });
 
   const headers = new Headers(request.headers);
-  headers.delete('host');
-  headers.delete('content-length');
+  [
+    'connection',
+    'content-length',
+    'forwarded',
+    'host',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
+    'x-forwarded-for',
+    'x-forwarded-host',
+    'x-forwarded-port',
+    'x-forwarded-proto',
+    'x-real-ip',
+  ].forEach((header) => headers.delete(header));
 
   const init: RequestInit & { duplex?: 'half' } = {
     method: request.method,

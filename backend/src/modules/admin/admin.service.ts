@@ -1,7 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+﻿import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AdminActionType, AdminBanType, ReportStatus, ReportTargetType } from '@prisma/client';
 import { Request } from 'express';
 import { getRequestMeta } from 'src/common/request/get-request-meta';
+import { AntiSpamService } from 'src/common/security/anti-spam.service';
 import { hashValue } from 'src/common/utils/request-identity';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -25,7 +26,10 @@ const REPORT_STATUS_MAP: Record<Exclude<ReportStatusFilter, 'all' | undefined>, 
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly antiSpamService: AntiSpamService,
+  ) {}
 
   private getAdminUser(request: Request) {
     return (request as AdminRequest).adminUser;
@@ -65,6 +69,9 @@ export class AdminService {
   }
 
   async login(username: string, password: string, request: Request) {
+    const meta = getRequestMeta(request);
+    this.antiSpamService.enforceCooldown(`admin-login:${meta.actorHash}`, 60_000, 10);
+
     const user = await this.prisma.adminUser.findUnique({
       where: { username },
     });
@@ -317,9 +324,18 @@ export class AdminService {
     });
 
     await this.logAction(request, AdminActionType.CHANGE_PASSWORD, 'ADMIN_USER', user.id);
+    await this.prisma.adminSession.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
 
     return {
-      message: '비밀번호를 변경했습니다.',
+      message: '비밀번호를 변경했습니다. 다시 로그인해 주세요.',
     };
   }
 
@@ -412,6 +428,14 @@ export class AdminService {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) {
       throw new NotFoundException(`Post not found: ${id}`);
+    }
+
+    if (post.isDeleted) {
+      return {
+        id,
+        message: '?대? ?④? 泥섎━???볤??낅땲??',
+        reason: reason ?? null,
+      };
     }
 
     await this.prisma.$transaction([
@@ -516,7 +540,7 @@ export class AdminService {
         actionType: AdminActionType.AUTO_HIDE,
         targetType: reportTargetType,
         targetId,
-        reason: `신고 ${pendingCount}건 누적 자동 숨김`,
+        reason: `신고 ${pendingCount}건 누적으로 자동 숨김`,
       },
     });
 

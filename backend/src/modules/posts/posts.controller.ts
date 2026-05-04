@@ -34,8 +34,9 @@ export class PostsController {
     @Param('id', ParseIntPipe) threadId: number,
     @Param('postId', ParseIntPipe) postId: number,
     @Body() dto: UpdatePostDto,
+    @Req() request: Request,
   ) {
-    return this.postsService.updatePost(threadId, postId, dto);
+    return this.postsService.updatePost(threadId, postId, dto, getRequestMeta(request));
   }
 
   @Delete(':postId')
@@ -43,7 +44,8 @@ export class PostsController {
     @Param('id', ParseIntPipe) threadId: number,
     @Param('postId', ParseIntPipe) postId: number,
     @Body() dto: DeletePostDto,
+    @Req() request: Request,
   ) {
-    return this.postsService.deletePost(threadId, postId, dto);
+    return this.postsService.deletePost(threadId, postId, dto, getRequestMeta(request));
   }
 }

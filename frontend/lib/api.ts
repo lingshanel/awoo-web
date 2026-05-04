@@ -45,6 +45,7 @@ export type Attachment = {
   size: number;
   width?: number | null;
   height?: number | null;
+  deleteToken?: string;
 };
 
 export type BoardSummary = {
@@ -86,12 +87,14 @@ export type PostItem = {
     id: number;
     authorName: string;
     authorHash?: string | null;
+    isDeleted?: boolean;
   } | null;
   content: string;
   authorName: string;
   authorHash?: string | null;
   participantKey?: string | null;
   likeCount: number;
+  isDeleted: boolean;
   createdAt: string;
   attachments: Attachment[];
 };
@@ -199,9 +202,10 @@ export async function getBoardThreads(
   slug: string,
   sort: 'latest' | 'popular' | 'views' = 'latest',
   page = 1,
+  limit = 10,
 ) {
   const response = await fetch(
-    `${getApiBaseUrl()}/boards/${slug}/threads?sort=${sort}&page=${page}`,
+    `${getApiBaseUrl()}/boards/${slug}/threads?sort=${sort}&page=${page}&limit=${limit}`,
     {
       cache: 'no-store',
     },
@@ -253,6 +257,14 @@ export async function getThread(id: number) {
   return handleResponse<ThreadDetail>(response);
 }
 
+export async function getCaptchaChallenge() {
+  const response = await fetch(`${getApiBaseUrl()}/security/captcha`, {
+    cache: 'no-store',
+  });
+
+  return handleResponse<{ code: string; token: string; expiresAt: string }>(response);
+}
+
 export async function registerThreadView(id: number) {
   const response = await fetch(`${getApiBaseUrl()}/threads/${id}/view`, {
     method: 'POST',
@@ -271,6 +283,7 @@ export async function createThread(payload: {
   hasSpoiler?: boolean;
   hasNsfw?: boolean;
   attachmentIds?: number[];
+  attachmentDeleteTokens?: string[];
   editPassword: string;
   captchaToken: string;
   captchaAnswer: string;
@@ -296,6 +309,9 @@ export async function createPost(
     editPassword: string;
     isSage?: boolean;
     attachmentIds?: number[];
+    attachmentDeleteTokens?: string[];
+    captchaToken: string;
+    captchaAnswer: string;
   },
 ) {
   const response = await fetch(`${getApiBaseUrl()}/threads/${threadId}/posts`, {
@@ -323,7 +339,7 @@ async function requestWithJsonBody<T>(url: string, method: string, payload: unkn
 
 export async function updateThread(
   id: number,
-  payload: { title: string; content: string; editPassword: string },
+  payload: { title: string; content: string; editPassword: string; captchaToken: string; captchaAnswer: string },
 ) {
   return requestWithJsonBody<{ item: ThreadDetail; message: string }>(
     `${getApiBaseUrl()}/threads/${id}`,
@@ -343,7 +359,7 @@ export async function deleteThread(id: number, editPassword: string) {
 export async function updatePost(
   threadId: number,
   postId: number,
-  payload: { content: string; editPassword: string },
+  payload: { content: string; editPassword: string; captchaToken: string; captchaAnswer: string },
 ) {
   return requestWithJsonBody<{ item: { id: number }; message: string }>(
     `${getApiBaseUrl()}/threads/${threadId}/posts/${postId}`,
@@ -372,9 +388,13 @@ export async function uploadImages(files: File[]) {
   return handleResponse<{ items: Attachment[]; total: number }>(response);
 }
 
-export async function deleteUpload(id: number) {
+export async function deleteUpload(id: number, deleteToken?: string) {
   const response = await fetch(`${getApiBaseUrl()}/uploads/${id}`, {
     method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ deleteToken }),
   });
 
   return handleResponse<{ id: number; message: string }>(response);

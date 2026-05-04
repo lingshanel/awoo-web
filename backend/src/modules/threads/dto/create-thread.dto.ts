@@ -47,6 +47,13 @@ export class CreateThreadDto {
   attachmentIds?: number[];
 
   @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(4)
+  @IsString({ each: true })
+  @MaxLength(256, { each: true })
+  attachmentDeleteTokens?: string[];
+
+  @IsOptional()
   @IsBoolean()
   isSage?: boolean = false;
 
@@ -60,7 +67,7 @@ export class CreateThreadDto {
 
   @IsString()
   @MinLength(4)
-  @MaxLength(16)
+  @MaxLength(512)
   captchaToken!: string;
 
   @IsString()

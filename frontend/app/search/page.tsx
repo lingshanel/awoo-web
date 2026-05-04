@@ -1,10 +1,13 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ThreadCard } from '@/components/thread-card';
 import { getRecentThreads } from '@/lib/api';
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string; page?: string; media?: 'all' | 'images' }>;
 };
+
+const SEARCH_RESULTS_PER_PAGE = 10;
 
 function buildSearchHref(q: string, page: number, media: 'all' | 'images') {
   const params = new URLSearchParams();
@@ -22,14 +25,47 @@ function buildSearchHref(q: string, page: number, media: 'all' | 'images') {
   return `/search?${params.toString()}`;
 }
 
+function getPageItems(currentPage: number, totalPages: number) {
+  if (totalPages <= 10) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set([1, totalPages]);
+  const start = Math.max(2, currentPage - 3);
+  const end = Math.min(totalPages - 1, currentPage + 3);
+
+  for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+    pages.add(pageNumber);
+  }
+
+  const orderedPages = [...pages].sort((a, b) => a - b);
+  const items: Array<number | 'ellipsis'> = [];
+
+  orderedPages.forEach((pageNumber, index) => {
+    const previousPage = orderedPages[index - 1];
+
+    if (previousPage && pageNumber - previousPage > 1) {
+      items.push('ellipsis');
+    }
+
+    items.push(pageNumber);
+  });
+
+  return items;
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = await searchParams;
   const q = (resolvedSearchParams.q ?? '').trim();
   const page = Math.max(1, Number(resolvedSearchParams.page ?? '1') || 1);
   const media = resolvedSearchParams.media === 'images' ? 'images' : 'all';
   const data = q || media === 'images'
-    ? await getRecentThreads('latest', 20, page, { q, media })
-    : { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
+    ? await getRecentThreads('latest', SEARCH_RESULTS_PER_PAGE, page, { q, media })
+    : { items: [], pagination: { page: 1, limit: SEARCH_RESULTS_PER_PAGE, total: 0, totalPages: 0 } };
+
+  if ((q || media === 'images') && data.pagination.totalPages > 0 && page > data.pagination.totalPages) {
+    redirect(buildSearchHref(q, data.pagination.totalPages, media));
+  }
 
   return (
     <div className="page-body">
@@ -105,25 +141,47 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         {data.pagination.totalPages > 1 ? (
           <nav className="pagination" aria-label="검색 결과 페이지 이동">
-            <Link
-              className={`toolbar-button ${page <= 1 ? 'disabled' : ''}`}
-              href={buildSearchHref(q, Math.max(1, page - 1), media)}
-              aria-disabled={page <= 1}
-              tabIndex={page <= 1 ? -1 : undefined}
-            >
-              이전
-            </Link>
+            <div className="pagination-controls">
+              <Link
+                className={`pagination-arrow ${page <= 1 ? 'disabled' : ''}`}
+                href={buildSearchHref(q, Math.max(1, page - 1), media)}
+                aria-label="이전 페이지"
+                aria-disabled={page <= 1}
+                tabIndex={page <= 1 ? -1 : undefined}
+              >
+                &lt;
+              </Link>
+              <div className="pagination-pages">
+                {getPageItems(page, data.pagination.totalPages).map((pageItem, index) =>
+                  pageItem === 'ellipsis' ? (
+                    <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+                      ...
+                    </span>
+                  ) : (
+                    <Link
+                      key={pageItem}
+                      className={`pagination-page ${pageItem === page ? 'active' : ''}`}
+                      href={buildSearchHref(q, pageItem, media)}
+                      aria-current={pageItem === page ? 'page' : undefined}
+                    >
+                      {pageItem}
+                    </Link>
+                  ),
+                )}
+              </div>
+              <Link
+                className={`pagination-arrow ${page >= data.pagination.totalPages ? 'disabled' : ''}`}
+                href={buildSearchHref(q, Math.min(data.pagination.totalPages, page + 1), media)}
+                aria-label="다음 페이지"
+                aria-disabled={page >= data.pagination.totalPages}
+                tabIndex={page >= data.pagination.totalPages ? -1 : undefined}
+              >
+                &gt;
+              </Link>
+            </div>
             <div className="pagination-status">
               {page} / {data.pagination.totalPages} 페이지
             </div>
-            <Link
-              className={`toolbar-button ${page >= data.pagination.totalPages ? 'disabled' : ''}`}
-              href={buildSearchHref(q, Math.min(data.pagination.totalPages, page + 1), media)}
-              aria-disabled={page >= data.pagination.totalPages}
-              tabIndex={page >= data.pagination.totalPages ? -1 : undefined}
-            >
-              다음
-            </Link>
           </nav>
         ) : null}
       </main>

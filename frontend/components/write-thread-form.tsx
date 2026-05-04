@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { createThread, deleteUpload, uploadImages } from '@/lib/api';
 import { getBoardDisplayMeta } from '@/lib/board-meta';
 import { addOwnedThread } from '@/lib/thread-activity';
-import { CaptchaBox } from './captcha-box';
+import { CaptchaBox, type CaptchaBoxHandle } from './captcha-box';
 import { UploadPicker } from './upload-picker';
 
 type BoardOption = {
@@ -34,6 +34,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const captchaRef = useRef<CaptchaBoxHandle>(null);
 
   useEffect(() => {
     const board = searchParams.get('board');
@@ -55,16 +56,17 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
     if (!captchaValid) {
       setPending(false);
       setError('보안 문자가 일치하지 않습니다.');
+      void captchaRef.current?.refresh();
       return;
     }
 
-    let uploadedIds: number[] = [];
+    let uploadedItems: Array<{ id: number; deleteToken?: string }> = [];
 
     try {
       const uploads =
         files.length > 0 ? await uploadImages(files) : { items: [], total: 0 };
 
-      uploadedIds = uploads.items.map((item) => item.id);
+      uploadedItems = uploads.items;
       setUploadedNames(uploads.items.map((item) => item.originalName));
 
       const result = await createThread({
@@ -76,7 +78,8 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
         isSage,
         hasSpoiler,
         hasNsfw,
-        attachmentIds: uploadedIds,
+        attachmentIds: uploadedItems.map((item) => item.id),
+        attachmentDeleteTokens: uploadedItems.map((item) => item.deleteToken ?? ''),
         captchaToken: captchaCode,
         captchaAnswer,
       });
@@ -86,12 +89,15 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
       router.push(`/threads/${result.item.id}`);
       router.refresh();
     } catch (submitError) {
-      await Promise.all(uploadedIds.map((id) => deleteUpload(id).catch(() => undefined)));
+      await Promise.all(
+        uploadedItems.map((item) => deleteUpload(item.id, item.deleteToken).catch(() => undefined)),
+      );
       setError(
         submitError instanceof Error
           ? submitError.message
           : '스레드 작성 중 오류가 발생했습니다.',
       );
+      void captchaRef.current?.refresh();
     } finally {
       setPending(false);
     }
@@ -194,6 +200,7 @@ export function WriteThreadForm({ boards }: { boards: BoardOption[] }) {
             </label>
           </div>
           <CaptchaBox
+            ref={captchaRef}
             onValidityChange={({ answer, code, isValid }) => {
               setCaptchaAnswer(answer);
               setCaptchaCode(code);

@@ -24,11 +24,13 @@ type ThreadWithRelations = Thread & {
     authorHash: string | null;
     authorIpHash: string | null;
     likeCount: number;
+    isDeleted: boolean;
     createdAt: Date;
     parentPost: {
       id: number;
       authorName: string | null;
       authorHash: string | null;
+      isDeleted: boolean;
     } | null;
     attachments: Array<{
       id: number;
@@ -87,23 +89,31 @@ export function toThreadDetail(thread: ThreadWithRelations) {
     ...toThreadListItem(thread),
     content: thread.content,
     posts:
-      thread.posts?.map((post) => ({
-        id: post.id,
-        parentPostId: post.parentPostId,
-        replyTo: post.parentPost
-          ? {
-              id: post.parentPost.id,
-              authorName: post.parentPost.authorName ?? '익명',
-              authorHash: post.parentPost.authorHash,
-            }
-          : null,
-        content: post.content,
-        authorName: post.authorName ?? '익명',
-        authorHash: post.authorHash,
-        participantKey: post.authorIpHash,
-        likeCount: post.likeCount,
-        createdAt: post.createdAt,
-        attachments: post.attachments.map(toAttachmentResponse),
-      })) ?? [],
+      thread.posts?.map((post) => {
+        const isDeleted = post.isDeleted;
+
+        return {
+          id: post.id,
+          parentPostId: post.parentPostId,
+          replyTo: post.parentPost
+            ? {
+                id: post.parentPost.id,
+                authorName: post.parentPost.isDeleted
+                  ? '삭제된 댓글'
+                  : post.parentPost.authorName ?? '익명',
+                authorHash: post.parentPost.isDeleted ? null : post.parentPost.authorHash,
+                isDeleted: post.parentPost.isDeleted,
+              }
+            : null,
+          content: isDeleted ? '삭제된 댓글입니다.' : post.content,
+          authorName: isDeleted ? '삭제된 댓글' : post.authorName ?? '익명',
+          authorHash: isDeleted ? null : post.authorHash,
+          participantKey: isDeleted ? null : post.authorIpHash,
+          likeCount: isDeleted ? 0 : post.likeCount,
+          isDeleted,
+          createdAt: post.createdAt,
+          attachments: isDeleted ? [] : post.attachments.map(toAttachmentResponse),
+        };
+      }) ?? [],
   };
 }

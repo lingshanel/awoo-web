@@ -2,10 +2,12 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { AdminBanType } from '@prisma/client';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
+import { CaptchaService } from 'src/common/security/captcha.service';
 import { hashOwnerPassword, verifyOwnerPassword } from 'src/common/security/owner-password';
 import { buildPagination, getSkip } from 'src/common/utils/pagination';
 import { createAuthorHash } from 'src/common/utils/request-identity';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { DeletePostDto } from './dto/delete-post.dto';
 import { ThreadPostsQueryDto } from './dto/thread-posts-query.dto';
@@ -16,6 +18,8 @@ export class PostsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly antiSpamService: AntiSpamService,
+    private readonly captchaService: CaptchaService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async getPosts(threadId: number, query: ThreadPostsQueryDto) {
@@ -77,6 +81,7 @@ export class PostsService {
   }
 
   async createPost(threadId: number, dto: CreatePostDto, meta: RequestMeta) {
+    this.captchaService.verify(dto.captchaToken, dto.captchaAnswer);
     this.antiSpamService.enforceCooldown(`post:${meta.actorHash}`, 8_000, 2);
     this.antiSpamService.enforceContentQuality(`content:${meta.actorHash}`, dto.content);
 
@@ -104,6 +109,8 @@ export class PostsService {
 
     const authorHash = createAuthorHash(dto.authorName, dto.email);
     await this.ensureNotBanned(authorHash, meta.actorHash);
+    await this.uploadsService.assertCanAttach(dto.attachmentIds, dto.attachmentDeleteTokens);
+
     const post = await this.prisma.$transaction(async (tx) => {
       const created = await tx.post.create({
         data: {
@@ -164,7 +171,9 @@ export class PostsService {
     }
   }
 
-  async updatePost(threadId: number, postId: number, dto: UpdatePostDto) {
+  async updatePost(threadId: number, postId: number, dto: UpdatePostDto, meta: RequestMeta) {
+    this.captchaService.verify(dto.captchaToken, dto.captchaAnswer);
+
     const post = await this.prisma.post.findFirst({
       where: { id: postId, threadId, isDeleted: false },
     });
@@ -174,6 +183,7 @@ export class PostsService {
     }
 
     if (!verifyOwnerPassword(dto.editPassword, post.editPasswordHash)) {
+      this.throttleOwnerPasswordFailure(`post:update:${postId}:${meta.actorHash}`);
       throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
     }
 
@@ -192,7 +202,7 @@ export class PostsService {
     };
   }
 
-  async deletePost(threadId: number, postId: number, dto: DeletePostDto) {
+  async deletePost(threadId: number, postId: number, dto: DeletePostDto, meta: RequestMeta) {
     const post = await this.prisma.post.findFirst({
       where: { id: postId, threadId, isDeleted: false },
     });
@@ -202,6 +212,7 @@ export class PostsService {
     }
 
     if (!verifyOwnerPassword(dto.editPassword, post.editPasswordHash)) {
+      this.throttleOwnerPasswordFailure(`post:delete:${postId}:${meta.actorHash}`);
       throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
     }
 
@@ -226,5 +237,9 @@ export class PostsService {
       id: postId,
       message: '댓글을 삭제했습니다.',
     };
+  }
+
+  private throttleOwnerPasswordFailure(key: string) {
+    this.antiSpamService.enforceCooldown(`owner-password:${key}`, 5 * 60 * 1000, 5);
   }
 }

@@ -1,15 +1,19 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Param,
   Post,
+  Req,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { getRequestMeta } from 'src/common/request/get-request-meta';
 import { ensureUploadDir } from 'src/common/uploads/upload-path';
 import { UploadsService } from './uploads.service';
 
@@ -38,16 +42,16 @@ export class UploadsController {
       },
     }),
   )
-  createUploads(@UploadedFiles() files: Express.Multer.File[]) {
+  createUploads(@UploadedFiles() files: Express.Multer.File[], @Req() request: Request) {
     if (!files?.length) {
       throw new BadRequestException('업로드할 이미지 파일이 필요합니다.');
     }
 
-    return this.uploadsService.createUploads(files);
+    return this.uploadsService.createUploads(files, getRequestMeta(request));
   }
 
   @Delete(':id')
-  deleteUpload(@Param('id') id: string) {
-    return this.uploadsService.deleteUpload(Number(id));
+  deleteUpload(@Param('id') id: string, @Body('deleteToken') deleteToken: string | undefined) {
+    return this.uploadsService.deleteUpload(Number(id), deleteToken);
   }
 }

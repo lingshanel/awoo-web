@@ -15,21 +15,21 @@ type HotThreshold = {
 };
 
 const DEFAULT_HOT_THRESHOLD: HotThreshold = {
-  minLikes: 3,
-  minViews: 80,
-  strongLikes: 6,
-  strongViews: 160,
+  minLikes: 5,
+  minViews: 140,
+  strongLikes: 10,
+  strongViews: 280,
 };
 
 const BOARD_HOT_THRESHOLDS: Partial<Record<string, HotThreshold>> = {
-  anime: { minLikes: 3, minViews: 90, strongLikes: 6, strongViews: 180 },
-  tech: { minLikes: 2, minViews: 70, strongLikes: 5, strongViews: 140 },
-  cyber: { minLikes: 2, minViews: 70, strongLikes: 5, strongViews: 135 },
-  game: { minLikes: 4, minViews: 95, strongLikes: 7, strongViews: 190 },
-  music: { minLikes: 2, minViews: 60, strongLikes: 5, strongViews: 130 },
-  news: { minLikes: 2, minViews: 110, strongLikes: 4, strongViews: 220 },
-  photo: { minLikes: 3, minViews: 75, strongLikes: 5, strongViews: 150 },
-  random: { minLikes: 2, minViews: 55, strongLikes: 4, strongViews: 120 },
+  anime: { minLikes: 5, minViews: 160, strongLikes: 10, strongViews: 320 },
+  tech: { minLikes: 4, minViews: 130, strongLikes: 9, strongViews: 260 },
+  cyber: { minLikes: 4, minViews: 130, strongLikes: 9, strongViews: 260 },
+  game: { minLikes: 6, minViews: 170, strongLikes: 12, strongViews: 340 },
+  music: { minLikes: 4, minViews: 120, strongLikes: 9, strongViews: 240 },
+  news: { minLikes: 4, minViews: 180, strongLikes: 8, strongViews: 360 },
+  photo: { minLikes: 5, minViews: 130, strongLikes: 9, strongViews: 260 },
+  random: { minLikes: 4, minViews: 110, strongLikes: 8, strongViews: 220 },
 };
 
 function getHotThreshold(boardSlug: string) {

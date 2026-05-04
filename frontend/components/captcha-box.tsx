@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { getCaptchaChallenge } from '@/lib/api';
 
 const CAPTCHA_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -11,42 +12,69 @@ function createCaptchaCode() {
   }).join('');
 }
 
-export function CaptchaBox({
-  label = '// 보안 확인',
-  onValidityChange,
-}: {
+export type CaptchaBoxHandle = {
+  refresh: () => Promise<void>;
+};
+
+export const CaptchaBox = forwardRef<CaptchaBoxHandle, {
   label?: string;
   onValidityChange?: (payload: {
     isValid: boolean;
     answer: string;
     code: string;
   }) => void;
-}) {
-  const [code, setCode] = useState(() => createCaptchaCode());
+}>(function CaptchaBox({
+  label = '// 보안 확인',
+  onValidityChange,
+}, ref) {
+  const [code, setCode] = useState('');
+  const [token, setToken] = useState('');
   const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const normalizedAnswer = useMemo(() => answer.trim().toUpperCase(), [answer]);
-  const isValid = normalizedAnswer.length > 0 && normalizedAnswer === code;
+  const isValid = Boolean(token) && normalizedAnswer.length > 0 && normalizedAnswer === code;
+
+  useEffect(() => {
+    void refresh();
+  }, []);
 
   useEffect(() => {
     onValidityChange?.({
       isValid,
       answer: normalizedAnswer,
-      code,
+      code: token,
     });
-  }, [code, isValid, normalizedAnswer, onValidityChange]);
+  }, [isValid, normalizedAnswer, onValidityChange, token]);
 
-  function refresh() {
-    setCode(createCaptchaCode());
+  useImperativeHandle(ref, () => ({
+    refresh,
+  }));
+
+  async function refresh() {
+    setLoading(true);
     setAnswer('');
+    setCode('');
+    setToken('');
+
+    try {
+      const challenge = await getCaptchaChallenge();
+      setCode(challenge.code);
+      setToken(challenge.token);
+    } catch {
+      setCode('ERROR');
+      setToken('');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="field">
       <label>{label}</label>
       <div className="captcha-box">
-        <div className="captcha-puzzle">{code}</div>
-        <button className="captcha-refresh" type="button" onClick={refresh}>
+        <div className="captcha-puzzle">{code || '-----'}</div>
+        <button className="captcha-refresh" disabled={loading} type="button" onClick={refresh}>
           새로고침
         </button>
         <input
@@ -59,4 +87,4 @@ export function CaptchaBox({
       </div>
     </div>
   );
-}
+});

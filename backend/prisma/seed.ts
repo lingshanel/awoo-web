@@ -114,6 +114,24 @@ const boardTopics: Record<string, Array<{ title: string; content: string }>> = {
   ],
 };
 
+function buildExpandedTopics(slug: string, topics: Array<{ title: string; content: string }>) {
+  if (topics.length >= 10) {
+    return topics;
+  }
+
+  const expandedTopics = [...topics];
+
+  for (let index = topics.length; index < 10; index += 1) {
+    const source = topics[index % topics.length];
+    expandedTopics.push({
+      title: `[${slug}] 추가 이야기 ${index + 1}`,
+      content: `${source.content}\n\n카테고리 목록이 10페이지 이상 보이도록 준비한 확장 샘플 스레드입니다.`,
+    });
+  }
+
+  return expandedTopics;
+}
+
 function minutesAfter(base: Date, minutes: number) {
   return new Date(base.getTime() + minutes * 60 * 1000);
 }
@@ -175,7 +193,7 @@ async function createSampleThreads() {
   let threadIndex = 0;
 
   for (const board of boards) {
-    const topics = boardTopics[board.slug] ?? boardTopics.random;
+    const topics = buildExpandedTopics(board.slug, boardTopics[board.slug] ?? boardTopics.random);
 
     for (const [topicIndex, topic] of topics.entries()) {
       threadIndex += 1;

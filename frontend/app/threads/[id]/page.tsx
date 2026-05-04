@@ -74,7 +74,7 @@ function buildPostReferences(posts: DisplayPost[]) {
         id: post.id,
         displayNumber: post.displayNumber,
         authorName: post.displayAuthorName,
-        content: post.content,
+        content: post.isDeleted ? '삭제된 댓글입니다.' : post.content,
         createdAt: post.createdAt,
         attachments: post.attachments,
       } satisfies RichTextReference,
@@ -163,6 +163,7 @@ function PostCard({
   depth?: number;
 }) {
   const children = childrenByParent?.get(post.id) ?? [];
+  const isDeleted = post.isDeleted;
   const replyTargetNumber = post.replyTo ? postNumberById.get(post.replyTo.id) : undefined;
   const replyTargetAuthorName = post.replyTo
     ? postAuthorNames.get(post.replyTo.id) ?? post.replyTo.authorName
@@ -174,15 +175,15 @@ function PostCard({
       key={post.id}
       className={`reply-item ${post.authorHash === threadAuthorHash ? 'op' : ''} ${
         depth > 0 ? 'reply-child' : ''
-      }`}
+      } ${isDeleted ? 'deleted' : ''}`}
       style={depth > 0 ? { marginLeft: Math.min(depth, 4) * 24 } : undefined}
     >
       <div className="reply-meta">
         <span>#{post.displayNumber}</span>
         <span>{post.displayAuthorName}</span>
-        <span>ID: {post.authorHash ?? 'anon'}</span>
+        {isDeleted ? <span>삭제됨</span> : <span>ID: {post.authorHash ?? 'anon'}</span>}
         <span>{formatDate(post.createdAt)}</span>
-        <span>추천 {post.likeCount}</span>
+        {isDeleted ? null : <span>추천 {post.likeCount}</span>}
         {post.replyTo ? (
           <span>
             → #{replyTargetNumber ?? post.replyTo.id} {replyTargetAuthorName} 님에게 답글
@@ -190,25 +191,31 @@ function PostCard({
         ) : null}
       </div>
       <div className="reply-body">
-        <PostRichText content={post.content} references={postReferences} />
+        {isDeleted ? (
+          <span className="deleted-reply-text">삭제된 댓글입니다.</span>
+        ) : (
+          <PostRichText content={post.content} references={postReferences} />
+        )}
       </div>
-      {post.attachments.length ? (
+      {!isDeleted && post.attachments.length ? (
         <div style={{ marginTop: 10 }}>
           <LightboxGallery attachments={post.attachments} />
         </div>
       ) : null}
-      <div className="reply-actions">
-        <Link className="reaction-btn" href={`/threads/${threadId}?replyTo=${post.id}#reply-form`}>
-          답글
-        </Link>
-        <OwnerEditActions
-          target="post"
-          threadId={threadId}
-          postId={post.id}
-          content={post.content}
-        />
-        <ReactionControls id={post.id} target="post" />
-      </div>
+      {!isDeleted ? (
+        <div className="reply-actions">
+          <Link className="reaction-btn" href={`/threads/${threadId}?replyTo=${post.id}#reply-form`}>
+            답글
+          </Link>
+          <OwnerEditActions
+            target="post"
+            threadId={threadId}
+            postId={post.id}
+            content={post.content}
+          />
+          <ReactionControls id={post.id} target="post" />
+        </div>
+      ) : null}
       {childrenByParent
         ? children.map((child) => (
             <PostCard
@@ -313,7 +320,7 @@ export default async function ThreadPage({ params, searchParams }: ThreadPagePro
                   flexWrap: 'wrap',
                 }}
               >
-                <span>// replies {thread.posts.length}</span>
+                <span>// replies {thread.replyCount}</span>
                 <div className="sort-tabs">
                   {POST_SORT_OPTIONS.map((option) => (
                     <Link

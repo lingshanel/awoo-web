@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateBanDto {
   @IsIn(['AUTHOR_HASH', 'IP_HASH'])
@@ -14,5 +14,6 @@ export class CreateBanDto {
 
   @IsOptional()
   @IsInt()
+  @Min(1)
   expiresInHours?: number;
 }

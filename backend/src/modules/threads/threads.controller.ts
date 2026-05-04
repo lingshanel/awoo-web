@@ -26,12 +26,20 @@ export class ThreadsController {
   }
 
   @Patch(':id')
-  updateThread(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateThreadDto) {
-    return this.threadsService.updateThread(id, dto);
+  updateThread(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateThreadDto,
+    @Req() request: Request,
+  ) {
+    return this.threadsService.updateThread(id, dto, getRequestMeta(request));
   }
 
   @Delete(':id')
-  deleteThread(@Param('id', ParseIntPipe) id: number, @Body() dto: DeleteThreadDto) {
-    return this.threadsService.deleteThread(id, dto);
+  deleteThread(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DeleteThreadDto,
+    @Req() request: Request,
+  ) {
+    return this.threadsService.deleteThread(id, dto, getRequestMeta(request));
   }
 }

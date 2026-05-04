@@ -43,6 +43,23 @@ export class CreatePostDto {
   attachmentIds?: number[];
 
   @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(4)
+  @IsString({ each: true })
+  @MaxLength(256, { each: true })
+  attachmentDeleteTokens?: string[];
+
+  @IsOptional()
   @IsBoolean()
   isSage?: boolean = false;
+
+  @IsString()
+  @MinLength(4)
+  @MaxLength(512)
+  captchaToken!: string;
+
+  @IsString()
+  @MinLength(4)
+  @MaxLength(16)
+  captchaAnswer!: string;
 }

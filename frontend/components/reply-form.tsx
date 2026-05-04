@@ -1,9 +1,9 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPost, deleteUpload, uploadImages } from '@/lib/api';
-import { CaptchaBox } from './captcha-box';
+import { CaptchaBox, type CaptchaBoxHandle } from './captcha-box';
 import { UploadPicker } from './upload-picker';
 
 export function ReplyForm({
@@ -18,9 +18,12 @@ export function ReplyForm({
   const [authorName, setAuthorName] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaCode, setCaptchaCode] = useState('');
   const [captchaValid, setCaptchaValid] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const captchaRef = useRef<CaptchaBoxHandle>(null);
 
   useEffect(() => {
     if (!replyTo) {
@@ -55,38 +58,46 @@ export function ReplyForm({
     if (!captchaValid) {
       setPending(false);
       setError('보안 문자가 일치하지 않습니다.');
+      void captchaRef.current?.refresh();
       return;
     }
 
-    let uploadedIds: number[] = [];
+    let uploadedItems: Array<{ id: number; deleteToken?: string }> = [];
 
     try {
       const uploads =
         files.length > 0 ? await uploadImages(files) : { items: [], total: 0 };
 
-      uploadedIds = uploads.items.map((item) => item.id);
+      uploadedItems = uploads.items;
 
       await createPost(threadId, {
         content,
         authorName: authorName || undefined,
         editPassword,
         parentPostId: replyTo?.id,
-        attachmentIds: uploadedIds,
+        attachmentIds: uploadedItems.map((item) => item.id),
+        attachmentDeleteTokens: uploadedItems.map((item) => item.deleteToken ?? ''),
+        captchaToken: captchaCode,
+        captchaAnswer,
       });
 
       setContent('');
       setAuthorName('');
       setEditPassword('');
       setFiles([]);
+      void captchaRef.current?.refresh();
       router.push(`/threads/${threadId}`);
       router.refresh();
     } catch (submitError) {
-      await Promise.all(uploadedIds.map((id) => deleteUpload(id).catch(() => undefined)));
+      await Promise.all(
+        uploadedItems.map((item) => deleteUpload(item.id, item.deleteToken).catch(() => undefined)),
+      );
       setError(
         submitError instanceof Error
           ? submitError.message
           : '댓글 등록 중 오류가 발생했습니다.',
       );
+      void captchaRef.current?.refresh();
     } finally {
       setPending(false);
     }
@@ -145,8 +156,11 @@ export function ReplyForm({
           </div>
           <UploadPicker files={files} onChange={setFiles} onRemove={removeFile} />
           <CaptchaBox
+            ref={captchaRef}
             label="// 보안 문자"
-            onValidityChange={({ isValid }) => {
+            onValidityChange={({ answer, code, isValid }) => {
+              setCaptchaAnswer(answer);
+              setCaptchaCode(code);
               setCaptchaValid(isValid);
             }}
           />

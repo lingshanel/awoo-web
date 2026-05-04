@@ -4,13 +4,29 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { ensureUploadDir, getUploadDir } from './common/uploads/upload-path';
 import { AppModule } from './app.module';
 
+function getCorsOrigin() {
+  const configuredOrigins = process.env.CLIENT_ORIGIN?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configuredOrigins?.length) {
+    return configuredOrigins;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CLIENT_ORIGIN must be set in production.');
+  }
+
+  return true;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   ensureUploadDir();
 
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: process.env.CLIENT_ORIGIN?.split(',') ?? true,
+    origin: getCorsOrigin(),
     credentials: false,
   });
   app.useStaticAssets(getUploadDir(), {

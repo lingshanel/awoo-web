@@ -9,6 +9,9 @@ frontend/.next/
 backend/dist/
 dist/
 coverage/
+*.tsbuildinfo
+frontend/*-test.png
+frontend/*-mobile.png
 
 # local env files
 .env

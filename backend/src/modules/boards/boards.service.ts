@@ -43,22 +43,20 @@ export class BoardsService {
     ];
   }
 
-  private sortHotThenLatest<T extends { isPinned: boolean; createdAt: Date } & Parameters<typeof isHotThread>[0]>(
+  private sortHotThenLatest<T extends { id: number; isPinned: boolean; createdAt: Date } & Parameters<typeof isHotThread>[0]>(
     threads: T[],
   ) {
-    return [...threads].sort((a, b) => {
-      if (a.isPinned !== b.isPinned) {
-        return Number(b.isPinned) - Number(a.isPinned);
-      }
+    const pinnedThreads = threads
+      .filter((thread) => thread.isPinned)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const normalThreads = threads
+      .filter((thread) => !thread.isPinned)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const hotThreads = normalThreads.filter(isHotThread).slice(0, 2);
+    const promotedHotIds = new Set(hotThreads.map((thread) => thread.id));
+    const latestThreads = normalThreads.filter((thread) => !promotedHotIds.has(thread.id));
 
-      const aHot = isHotThread(a);
-      const bHot = isHotThread(b);
-      if (aHot !== bHot) {
-        return Number(bHot) - Number(aHot);
-      }
-
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    });
+    return [...pinnedThreads, ...hotThreads, ...latestThreads];
   }
 
   async getBoards() {

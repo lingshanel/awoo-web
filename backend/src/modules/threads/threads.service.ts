@@ -1,9 +1,11 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AdminBanType } from '@prisma/client';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
+import { CaptchaService } from 'src/common/security/captcha.service';
 import { hashOwnerPassword, verifyOwnerPassword } from 'src/common/security/owner-password';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { createAuthorHash } from 'src/common/utils/request-identity';
+import { UploadsService } from '../uploads/uploads.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { DeleteThreadDto } from './dto/delete-thread.dto';
@@ -16,9 +18,12 @@ export class ThreadsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly antiSpamService: AntiSpamService,
+    private readonly captchaService: CaptchaService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async createThread(dto: CreateThreadDto, meta: RequestMeta) {
+    this.captchaService.verify(dto.captchaToken, dto.captchaAnswer);
     this.antiSpamService.enforceCooldown(`thread:${meta.actorHash}`, 20_000);
     this.antiSpamService.enforceContentQuality(`content:${meta.actorHash}`, `${dto.title}\n${dto.content}`);
 
@@ -29,6 +34,8 @@ export class ThreadsService {
     if (!board) {
       throw new NotFoundException(`Board not found: ${dto.boardSlug}`);
     }
+
+    await this.uploadsService.assertCanAttach(dto.attachmentIds, dto.attachmentDeleteTokens);
 
     const authorHash = createAuthorHash(dto.authorName, dto.email);
     await this.ensureNotBanned(authorHash, meta.actorHash);
@@ -109,7 +116,9 @@ export class ThreadsService {
     };
   }
 
-  async updateThread(id: number, dto: UpdateThreadDto) {
+  async updateThread(id: number, dto: UpdateThreadDto, meta: RequestMeta) {
+    this.captchaService.verify(dto.captchaToken, dto.captchaAnswer);
+
     const thread = await this.prisma.thread.findFirst({
       where: { id, isDeleted: false },
     });
@@ -119,6 +128,7 @@ export class ThreadsService {
     }
 
     if (!verifyOwnerPassword(dto.editPassword, thread.editPasswordHash)) {
+      this.throttleOwnerPasswordFailure(`thread:update:${id}:${meta.actorHash}`);
       throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
     }
 
@@ -137,7 +147,7 @@ export class ThreadsService {
     };
   }
 
-  async deleteThread(id: number, dto: DeleteThreadDto) {
+  async deleteThread(id: number, dto: DeleteThreadDto, meta: RequestMeta) {
     const thread = await this.prisma.thread.findFirst({
       where: { id, isDeleted: false },
     });
@@ -147,6 +157,7 @@ export class ThreadsService {
     }
 
     if (!verifyOwnerPassword(dto.editPassword, thread.editPasswordHash)) {
+      this.throttleOwnerPasswordFailure(`thread:delete:${id}:${meta.actorHash}`);
       throw new ForbiddenException('수정/삭제 비밀번호가 올바르지 않습니다.');
     }
 
@@ -161,5 +172,9 @@ export class ThreadsService {
       id,
       message: '스레드를 삭제했습니다.',
     };
+  }
+
+  private throttleOwnerPasswordFailure(key: string) {
+    this.antiSpamService.enforceCooldown(`owner-password:${key}`, 5 * 60 * 1000, 5);
   }
 }

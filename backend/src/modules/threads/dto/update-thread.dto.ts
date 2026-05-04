@@ -15,4 +15,12 @@ export class UpdateThreadDto {
   @MinLength(4)
   @MaxLength(40)
   editPassword!: string;
+
+  @IsString()
+  captchaToken!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20)
+  captchaAnswer!: string;
 }

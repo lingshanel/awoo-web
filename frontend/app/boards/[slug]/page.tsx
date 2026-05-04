@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ThreadListWithViewMode } from '@/components/thread-list-with-view-mode';
 import { getBoardThreads, getBoards, getRecentThreads, type BoardSummary } from '@/lib/api';
 import { getBoardAccent, getBoardDisplayMeta } from '@/lib/board-meta';
@@ -15,6 +15,8 @@ const SORT_OPTIONS = [
   { value: 'views', label: '조회순' },
 ] as const;
 
+const THREADS_PER_PAGE = 10;
+
 const ALL_BOARD: BoardSummary = {
   id: 0,
   slug: 'all',
@@ -28,13 +30,13 @@ function buildBoardHref(slug: string, sort: string, page: number) {
 }
 
 function getPageItems(currentPage: number, totalPages: number) {
-  if (totalPages <= 7) {
+  if (totalPages <= 10) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
   const pages = new Set([1, totalPages]);
-  const start = Math.max(2, currentPage - 1);
-  const end = Math.min(totalPages - 1, currentPage + 1);
+  const start = Math.max(2, currentPage - 3);
+  const end = Math.min(totalPages - 1, currentPage + 3);
 
   for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
     pages.add(pageNumber);
@@ -72,12 +74,16 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
 
     const data =
       slug === 'all'
-        ? await getRecentThreads(sort, 20, page).then((result) => ({
+        ? await getRecentThreads(sort, THREADS_PER_PAGE, page).then((result) => ({
             board: { ...ALL_BOARD, threadCount: result.pagination.total },
             items: result.items,
             pagination: result.pagination,
           }))
-        : await getBoardThreads(slug, sort, page);
+        : await getBoardThreads(slug, sort, page, THREADS_PER_PAGE);
+
+    if (page > data.pagination.totalPages) {
+      redirect(buildBoardHref(slug, sort, data.pagination.totalPages));
+    }
 
     const boardMeta = getBoardDisplayMeta(data.board);
 
@@ -231,7 +237,16 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
         </aside>
       </div>
     );
-  } catch {
+  } catch (error) {
+    if (
+      typeof error === 'object' &&
+      error &&
+      'digest' in error &&
+      String(error.digest).startsWith('NEXT_REDIRECT')
+    ) {
+      throw error;
+    }
+
     notFound();
   }
 }

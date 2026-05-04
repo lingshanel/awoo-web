@@ -1,9 +1,20 @@
-export const THREAD_INCLUDE = {
+import { Prisma } from '@prisma/client';
+
+export const THREAD_INCLUDE = Prisma.validator<Prisma.ThreadInclude>()({
   board: true,
   attachments: true,
   posts: {
     where: {
-      isDeleted: false,
+      OR: [
+        { isDeleted: false },
+        {
+          childPosts: {
+            some: {
+              isDeleted: false,
+            },
+          },
+        },
+      ],
     },
     include: {
       attachments: true,
@@ -12,6 +23,7 @@ export const THREAD_INCLUDE = {
           id: true,
           authorName: true,
           authorHash: true,
+          isDeleted: true,
         },
       },
     },
@@ -19,4 +31,4 @@ export const THREAD_INCLUDE = {
       createdAt: 'asc',
     },
   },
-} as const;
+});

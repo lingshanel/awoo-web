@@ -524,29 +524,34 @@ export function AdminPanel() {
             <div className="thread-preview">기록된 관리 로그가 없습니다.</div>
           )}
         </div>
+      </section>
 
-        <div className="report-item admin-report-card">
-          <div className="section-header">비밀번호 변경</div>
-          <div className="field">
-            <label>현재 비밀번호</label>
-            <input
-              value={currentPassword}
-              type="password"
-              onChange={(event) => setCurrentPassword(event.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label>새 비밀번호</label>
-            <input
-              value={newPassword}
-              type="password"
-              onChange={(event) => setNewPassword(event.target.value)}
-            />
-          </div>
-          <button className="submit-btn primary" disabled={pending} type="button" onClick={handleChangePassword}>
-            비밀번호 변경
-          </button>
+      <section className="admin-security-strip">
+        <div className="admin-security-copy">
+          <span>SECURITY</span>
+          <strong>관리자 비밀번호 변경</strong>
         </div>
+        <div className="admin-password-fields">
+          <input
+            aria-label="현재 비밀번호"
+            autoComplete="current-password"
+            value={currentPassword}
+            type="password"
+            placeholder="현재 비밀번호"
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+          <input
+            aria-label="새 비밀번호"
+            autoComplete="new-password"
+            value={newPassword}
+            type="password"
+            placeholder="새 비밀번호"
+            onChange={(event) => setNewPassword(event.target.value)}
+          />
+        </div>
+        <button className="toolbar-button" disabled={pending} type="button" onClick={handleChangePassword}>
+          변경
+        </button>
       </section>
     </div>
   );
