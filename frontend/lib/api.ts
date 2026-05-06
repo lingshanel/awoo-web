@@ -30,10 +30,49 @@ function getAdminHeaders() {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed with status ${response.status}`);
+    throw new Error(getErrorMessage(text, response.status));
   }
 
   return (await response.json()) as T;
+}
+
+function getErrorMessage(text: string, status: number) {
+  if (text) {
+    try {
+      const parsed = JSON.parse(text) as { message?: unknown };
+      const message = parsed.message;
+
+      if (Array.isArray(message)) {
+        return message.join('\n');
+      }
+
+      if (typeof message === 'string' && message.trim()) {
+        return message;
+      }
+    } catch {
+      if (!text.trim().startsWith('{')) {
+        return text;
+      }
+    }
+  }
+
+  if (status === 400) {
+    return '입력값을 다시 확인해 주세요.';
+  }
+
+  if (status === 403) {
+    return '권한이 없거나 비밀번호가 올바르지 않습니다.';
+  }
+
+  if (status === 404) {
+    return '요청한 내용을 찾을 수 없습니다.';
+  }
+
+  if (status >= 500) {
+    return '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+
+  return '요청을 처리하지 못했습니다.';
 }
 
 export type Attachment = {
