@@ -35,7 +35,8 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
   const [captchaCode, setCaptchaCode] = useState('');
   const [captchaValid, setCaptchaValid] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<OwnerActionError | null>(null);
+  const [editError, setEditError] = useState<OwnerActionError | null>(null);
+  const [deleteError, setDeleteError] = useState<OwnerActionError | null>(null);
   const captchaRef = useRef<CaptchaBoxHandle>(null);
 
   useEffect(() => {
@@ -56,11 +57,11 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
 
   async function handleSave() {
     setPending(true);
-    setError(null);
+    setEditError(null);
 
     if (!captchaValid) {
       setPending(false);
-      setError({
+      setEditError({
         title: '보안 문자를 확인해 주세요',
         message: '입력한 보안 문자가 화면의 문자와 일치하지 않습니다.',
       });
@@ -93,7 +94,7 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
       setCaptchaValid(false);
       router.refresh();
     } catch (saveError) {
-      setError({
+      setEditError({
         title: '수정할 수 없습니다',
         message: saveError instanceof Error ? saveError.message : '수정에 실패했습니다.',
       });
@@ -105,7 +106,7 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
 
   async function handleDelete() {
     setPending(true);
-    setError(null);
+    setDeleteError(null);
 
     try {
       if (props.target === 'thread') {
@@ -121,7 +122,7 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
       setEditPassword('');
       router.refresh();
     } catch (deleteError) {
-      setError({
+      setDeleteError({
         title: '삭제할 수 없습니다',
         message: deleteError instanceof Error ? deleteError.message : '삭제에 실패했습니다.',
       });
@@ -137,10 +138,10 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
       </button>
       {open ? (
         <div className="owner-edit-panel">
-          {error && !deleteOpen ? (
+          {editError ? (
             <div className="owner-action-warning" role="alert">
-              <strong>{error.title}</strong>
-              <span>{error.message}</span>
+              <strong>{editError.title}</strong>
+              <span>{editError.message}</span>
             </div>
           ) : null}
           {props.target === 'thread' ? (
@@ -184,7 +185,10 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
               className="reaction-btn danger"
               disabled={pending}
               type="button"
-              onClick={() => setDeleteOpen(true)}
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteOpen(true);
+              }}
             >
               삭제
             </button>
@@ -234,10 +238,10 @@ export function OwnerEditActions(props: OwnerEditActionsProps) {
                 <p>작성 시 입력한 비밀번호가 맞아야 삭제가 진행됩니다.</p>
               </div>
             </div>
-            {error ? (
+            {deleteError ? (
               <div className="owner-action-warning delete-modal-warning" role="alert">
-                <strong>{error.title}</strong>
-                <span>{error.message}</span>
+                <strong>{deleteError.title}</strong>
+                <span>{deleteError.message}</span>
               </div>
             ) : null}
             <div className="delete-modal-actions">
