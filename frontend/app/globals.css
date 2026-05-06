@@ -1562,6 +1562,34 @@ select {
   margin-top: 14px;
 }
 
+.owner-action-warning {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 63, 110, 0.34);
+  border-left: 3px solid var(--accent2);
+  border-radius: 3px;
+  background: rgba(255, 63, 110, 0.09);
+  color: #ffd7df;
+  box-shadow: inset 0 0 18px rgba(255, 63, 110, 0.04);
+}
+
+.owner-action-warning strong {
+  color: #ff9bb2;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.owner-action-warning span {
+  color: #d7e4ef;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.delete-modal-warning {
+  margin-top: 12px;
+}
+
 .report-textarea {
   width: 100%;
   min-height: 118px;
