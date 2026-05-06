@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { BadRequestException, Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { unlink } from 'fs/promises';
-import { basename, extname, join } from 'path';
+import { unlink, writeFile } from 'fs/promises';
+import { join } from 'path';
 import * as sharp from 'sharp';
 import { RequestMeta } from 'src/common/request/request-meta';
 import { AntiSpamService } from 'src/common/security/anti-spam.service';
@@ -32,6 +32,16 @@ function getUploadBaseUrl() {
   return 'http://localhost:4000/uploads';
 }
 
+type StoredImage = {
+  url: string;
+  path: string;
+};
+
+type ImageBuffer = {
+  data: Buffer;
+  contentType: string;
+};
+
 @Injectable()
 export class UploadsService {
   constructor(
@@ -43,7 +53,6 @@ export class UploadsService {
     try {
       this.antiSpamService.enforceCooldown(`upload:${meta.actorHash}`, 30_000, 2);
     } catch (error) {
-      await Promise.all(files.map((file) => unlink(file.path).catch(() => undefined)));
       throw error;
     }
 
@@ -53,13 +62,18 @@ export class UploadsService {
 
     const uploads = await Promise.all(
       files.map(async (file) => {
-        const webpFileName = `${basename(file.filename, extname(file.filename))}.webp`;
+        const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const webpFileName = `${unique}.webp`;
+        const thumbFileName = `thumb-${unique}.jpg`;
         const webpPath = join(getUploadDir(), webpFileName);
-        const thumbFileName = `thumb-${basename(file.filename, extname(file.filename))}.jpg`;
         const thumbPath = join(getThumbnailDir(), thumbFileName);
+        const webpStoragePath = `images/${webpFileName}`;
+        const thumbStoragePath = `thumbs/${thumbFileName}`;
+        let storedOriginal: StoredImage | undefined;
+        let storedThumb: StoredImage | undefined;
 
         try {
-          const optimized = await sharp(file.path)
+          const optimized = await sharp(file.buffer)
             .rotate()
             .resize({
               width: maxWidth,
@@ -72,10 +86,7 @@ export class UploadsService {
             })
             .toBuffer({ resolveWithObject: true });
 
-          await sharp(optimized.data).toFile(webpPath);
-          await unlink(file.path).catch(() => undefined);
-
-          await sharp(optimized.data)
+          const thumbBuffer = await sharp(optimized.data)
             .resize({
               width: thumbSize,
               height: thumbSize,
@@ -86,7 +97,16 @@ export class UploadsService {
               quality: 76,
               mozjpeg: true,
             })
-            .toFile(thumbPath);
+            .toBuffer();
+
+          storedOriginal = await this.storeImage(webpStoragePath, {
+            data: optimized.data,
+            contentType: 'image/webp',
+          }, webpPath, `${baseUrl}/${webpFileName}`);
+          storedThumb = await this.storeImage(thumbStoragePath, {
+            data: thumbBuffer,
+            contentType: 'image/jpeg',
+          }, thumbPath, `${baseUrl}/thumbs/${thumbFileName}`);
 
           const attachment = await this.prisma.attachment.create({
             data: {
@@ -95,8 +115,8 @@ export class UploadsService {
               size: optimized.info.size,
               width: optimized.info.width,
               height: optimized.info.height,
-              storageKey: `${baseUrl}/${webpFileName}`,
-              thumbnailKey: `${baseUrl}/thumbs/${thumbFileName}`,
+              storageKey: storedOriginal.url,
+              thumbnailKey: storedThumb.url,
             },
           });
 
@@ -109,11 +129,8 @@ export class UploadsService {
             ),
           };
         } catch (error) {
-          await Promise.all([
-            unlink(file.path).catch(() => undefined),
-            unlink(webpPath).catch(() => undefined),
-            unlink(thumbPath).catch(() => undefined),
-          ]);
+          await this.removeStoredImages([storedOriginal, storedThumb]);
+          await Promise.all([unlink(webpPath).catch(() => undefined), unlink(thumbPath).catch(() => undefined)]);
           throw error;
         }
       }),
@@ -166,6 +183,11 @@ export class UploadsService {
       await unlink(join(getThumbnailDir(), thumbFileName)).catch(() => undefined);
     }
 
+    await this.removeStoredImages([
+      this.toStoredImage(attachment.storageKey),
+      attachment.thumbnailKey ? this.toStoredImage(attachment.thumbnailKey) : undefined,
+    ]);
+
     return {
       id,
       message: 'Attachment deleted.',
@@ -214,6 +236,103 @@ export class UploadsService {
     return createHmac('sha256', getUploadDeleteSecret())
       .update(`${id}:${storageKey}:${thumbnailKey ?? ''}`)
       .digest('base64url');
+  }
+
+  private shouldUseSupabaseStorage() {
+    return Boolean(
+      process.env.SUPABASE_URL &&
+        process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        process.env.SUPABASE_STORAGE_BUCKET,
+    );
+  }
+
+  private async storeImage(
+    storagePath: string,
+    image: ImageBuffer,
+    localPath: string,
+    localUrl: string,
+  ): Promise<StoredImage> {
+    if (!this.shouldUseSupabaseStorage()) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Supabase Storage must be configured in production.');
+      }
+
+      await writeFile(localPath, image.data);
+      return { url: localUrl, path: storagePath };
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL!.replace(/\/+$/, '');
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
+    const objectUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${storagePath}`;
+
+    const response = await fetch(objectUrl, {
+      method: 'POST',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': image.contentType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+      body: new Blob([this.toArrayBuffer(image.data)], { type: image.contentType }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase upload failed with status ${response.status}: ${await response.text()}`);
+    }
+
+    return {
+      url: `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`,
+      path: storagePath,
+    };
+  }
+
+  private async removeStoredImages(images: Array<StoredImage | undefined>) {
+    const paths = images
+      .map((image) => image?.path)
+      .filter((path): path is string => Boolean(path));
+
+    if (!paths.length || !this.shouldUseSupabaseStorage()) {
+      return;
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL!.replace(/\/+$/, '');
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
+
+    await fetch(`${supabaseUrl}/storage/v1/object/${bucket}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prefixes: paths }),
+    }).catch(() => undefined);
+  }
+
+  private toStoredImage(url: string): StoredImage | undefined {
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+
+    if (!bucket) {
+      return undefined;
+    }
+
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const markerIndex = url.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return undefined;
+    }
+
+    return {
+      url,
+      path: url.slice(markerIndex + marker.length),
+    };
+  }
+
+  private toArrayBuffer(buffer: Buffer) {
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
   }
 
   private safeEqual(left: string, right: string) {

@@ -11,10 +11,8 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { getRequestMeta } from 'src/common/request/get-request-meta';
-import { ensureUploadDir } from 'src/common/uploads/upload-path';
 import { UploadsService } from './uploads.service';
 
 @Controller('uploads')
@@ -24,15 +22,7 @@ export class UploadsController {
   @Post('images')
   @UseInterceptors(
     FilesInterceptor('files', 4, {
-      storage: diskStorage({
-        destination: (_request, _file, callback) => {
-          callback(null, ensureUploadDir());
-        },
-        filename: (_request, file, callback) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          callback(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (_request, file, callback) => {
         callback(null, file.mimetype.startsWith('image/'));
       },
