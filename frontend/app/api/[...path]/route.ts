@@ -3,11 +3,30 @@ import { NextRequest } from 'next/server';
 const BACKEND_API_BASE =
   process.env.BACKEND_API_BASE_URL ?? 'http://localhost:4000/api';
 
+function normalizeApiBaseUrl(value: string) {
+  return value
+    .trim()
+    .replace(/^BACKEND_API_BASE_URL\s*=\s*/, '')
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/\/+$/, '');
+}
+
 async function proxy(request: NextRequest, path: string[]) {
-  const targetUrl = new URL(`${BACKEND_API_BASE}/${path.join('/')}`);
-  request.nextUrl.searchParams.forEach((value, key) => {
-    targetUrl.searchParams.set(key, value);
-  });
+  let targetUrl: URL;
+
+  try {
+    targetUrl = new URL(`${normalizeApiBaseUrl(BACKEND_API_BASE)}/${path.join('/')}`);
+    request.nextUrl.searchParams.forEach((value, key) => {
+      targetUrl.searchParams.set(key, value);
+    });
+  } catch {
+    return Response.json(
+      {
+        message: 'Invalid BACKEND_API_BASE_URL configuration.',
+      },
+      { status: 502 },
+    );
+  }
 
   const headers = new Headers(request.headers);
   [
