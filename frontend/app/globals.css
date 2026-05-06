@@ -2395,10 +2395,6 @@ select {
     font-size: 14px;
   }
 
-  .header-nav {
-    display: none;
-  }
-
   .hero {
     padding: 16px;
   }
@@ -2499,5 +2495,272 @@ select {
   .toolbar-link,
   .submit-btn {
     flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 0 10px 32px;
+  }
+
+  .site-header {
+    position: sticky;
+  }
+
+  .header-inner {
+    height: auto;
+    min-height: 52px;
+    padding: 8px 10px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-nav {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+  }
+
+  .header-nav a {
+    flex: 0 0 auto;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .ad-banner-top,
+  .ad-banner-footer {
+    padding: 6px 10px;
+  }
+
+  .ad-slot-top {
+    height: 74px;
+  }
+
+  .page-body {
+    padding-top: 10px;
+  }
+
+  .search-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .search-bar button {
+    width: 100%;
+  }
+
+  .thread-card,
+  .thread-card-compact {
+    gap: 8px;
+    padding: 11px 10px;
+  }
+
+  .thread-card-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .thread-card-compact .thread-board-tag,
+  .thread-card-compact .thread-num {
+    justify-self: start;
+  }
+
+  .thread-compact-side {
+    grid-column: auto;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .thread-title {
+    -webkit-line-clamp: 2;
+  }
+
+  .thread-preview {
+    max-width: none;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .post-header,
+  .post-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .post-actions > *,
+  .reaction-controls,
+  .reaction-controls .action-panel {
+    width: 100%;
+  }
+
+  .reaction-bar,
+  .reply-actions,
+  .action-panel {
+    width: 100%;
+  }
+
+  .reaction-btn,
+  .toolbar-button,
+  .toolbar-link,
+  .submit-btn {
+    min-width: 0;
+  }
+
+  .reply-item {
+    padding: 11px 10px;
+  }
+
+  .reply-item.reply-child {
+    margin-left: 10px !important;
+  }
+
+  .reply-body,
+  .post-content {
+    overflow-wrap: anywhere;
+  }
+
+  .form-header {
+    padding: 14px 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .form-body,
+  .reply-form-body {
+    padding: 16px;
+  }
+
+  .upload-drop {
+    padding: 18px 12px;
+  }
+
+  .captcha-box {
+    gap: 10px;
+  }
+
+  .captcha-puzzle,
+  .captcha-input,
+  .captcha-refresh,
+  .captcha-hint {
+    width: 100%;
+  }
+
+  .captcha-puzzle {
+    text-align: center;
+  }
+
+  .attachment-strip,
+  .upload-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .attachment-card,
+  .upload-chip {
+    min-width: 0;
+  }
+
+  .attachment-card img,
+  .attachment-card span {
+    width: 100%;
+  }
+
+  .attachment-card img {
+    aspect-ratio: 1;
+    height: auto;
+  }
+
+  .footer-inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shell {
+    padding-inline: 8px;
+  }
+
+  .logo {
+    font-size: 18px;
+  }
+
+  .hero-title {
+    font-size: 34px;
+    line-height: 1.1;
+  }
+
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .thread-card {
+    grid-template-columns: 1fr;
+  }
+
+  .thread-num {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .thread-meta-row,
+  .post-meta,
+  .reply-meta,
+  .muted-row {
+    gap: 7px;
+    row-gap: 3px;
+  }
+
+  .pagination-page,
+  .pagination-arrow,
+  .pagination-ellipsis {
+    min-width: 30px;
+    height: 32px;
+  }
+
+  .sort-tabs,
+  .toolbar-group,
+  .report-actions,
+  .delete-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sort-tabs .toolbar-button,
+  .toolbar-group .toolbar-button,
+  .report-actions .reaction-btn,
+  .delete-modal-actions .reaction-btn {
+    width: 100%;
+  }
+
+  .reaction-bar,
+  .reply-actions,
+  .action-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reaction-btn {
+    width: 100%;
+  }
+
+  .owner-edit-panel {
+    padding: 10px;
+  }
+
+  .report-modal,
+  .delete-modal {
+    padding: 14px;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
   }
 }
