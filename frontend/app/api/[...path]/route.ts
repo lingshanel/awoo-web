@@ -64,9 +64,18 @@ async function proxy(request: NextRequest, path: string[]) {
   try {
     const response = await fetch(targetUrl, init);
 
+    const responseHeaders = new Headers();
+    const contentType = response.headers.get('content-type');
+
+    if (contentType) {
+      responseHeaders.set('content-type', contentType);
+    }
+
+    responseHeaders.set('cache-control', 'no-store');
+
     return new Response(response.body, {
       status: response.status,
-      headers: response.headers,
+      headers: responseHeaders,
     });
   } catch (error) {
     return Response.json(
