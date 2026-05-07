@@ -9,6 +9,7 @@ import { ReplyForm } from '@/components/reply-form';
 import { ThreadViewTracker } from '@/components/thread-view-tracker';
 import { UserThreadHistory } from '@/components/user-thread-history';
 import { getThread } from '@/lib/api';
+import { formatKoreanDateTime } from '@/lib/date-format';
 
 type ThreadPageProps = {
   params: Promise<{ id: string }>;
@@ -29,13 +30,7 @@ const POST_SORT_OPTIONS = [
 ] as const;
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return formatKoreanDateTime(value, { includeYear: true });
 }
 
 function isAnonymousName(name: string) {

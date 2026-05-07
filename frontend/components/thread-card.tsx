@@ -1,14 +1,10 @@
 import Link from 'next/link';
 import type { ThreadListItem } from '@/lib/api';
+import { formatKoreanDateTime } from '@/lib/date-format';
 import { isHotThread } from '@/lib/thread-heat';
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return formatKoreanDateTime(value);
 }
 
 function formatActivityLabel(thread: ThreadListItem) {

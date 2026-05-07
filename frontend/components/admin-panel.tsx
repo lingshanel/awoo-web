@@ -21,6 +21,7 @@ import {
   type AdminUser,
   type ReportItem,
 } from '@/lib/api';
+import { formatKoreanDateTime } from '@/lib/date-format';
 
 const reportFilters = [
   { value: 'pending', label: '대기' },
@@ -29,12 +30,7 @@ const reportFilters = [
 ] as const;
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  return formatKoreanDateTime(value);
 }
 
 function getTargetPreview(report: ReportItem) {
