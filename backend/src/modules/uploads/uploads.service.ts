@@ -1,5 +1,11 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { BadRequestException, Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import * as sharp from 'sharp';
@@ -56,7 +62,8 @@ export class UploadsService {
       throw error;
     }
 
-    const baseUrl = getUploadBaseUrl();
+    const useSupabaseStorage = this.shouldUseSupabaseStorage();
+    const baseUrl = useSupabaseStorage ? undefined : getUploadBaseUrl();
     const maxWidth = Number(process.env.UPLOAD_MAX_WIDTH ?? 1600);
     const thumbSize = Number(process.env.UPLOAD_THUMB_SIZE ?? 320);
 
@@ -102,11 +109,11 @@ export class UploadsService {
           storedOriginal = await this.storeImage(webpStoragePath, {
             data: optimized.data,
             contentType: 'image/webp',
-          }, webpPath, `${baseUrl}/${webpFileName}`);
+          }, webpPath, baseUrl ? `${baseUrl}/${webpFileName}` : undefined);
           storedThumb = await this.storeImage(thumbStoragePath, {
             data: thumbBuffer,
             contentType: 'image/jpeg',
-          }, thumbPath, `${baseUrl}/thumbs/${thumbFileName}`);
+          }, thumbPath, baseUrl ? `${baseUrl}/thumbs/${thumbFileName}` : undefined);
 
           const attachment = await this.prisma.attachment.create({
             data: {
@@ -250,15 +257,17 @@ export class UploadsService {
     storagePath: string,
     image: ImageBuffer,
     localPath: string,
-    localUrl: string,
+    localUrl?: string,
   ): Promise<StoredImage> {
     if (!this.shouldUseSupabaseStorage()) {
       if (process.env.NODE_ENV === 'production') {
-        throw new Error('Supabase Storage must be configured in production.');
+        throw new ServiceUnavailableException(
+          '이미지 저장소 설정을 확인하는 중입니다. 잠시 후 다시 시도해 주세요.',
+        );
       }
 
       await writeFile(localPath, image.data);
-      return { url: localUrl, path: storagePath };
+      return { url: localUrl ?? storagePath, path: storagePath };
     }
 
     const supabaseUrl = process.env.SUPABASE_URL!.replace(/\/+$/, '');
@@ -278,7 +287,9 @@ export class UploadsService {
     });
 
     if (!response.ok) {
-      throw new Error(`Supabase upload failed with status ${response.status}: ${await response.text()}`);
+      throw new ServiceUnavailableException(
+        '이미지 업로드 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      );
     }
 
     return {
