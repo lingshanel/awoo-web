@@ -18,7 +18,9 @@ function getUploadDeleteSecret() {
   const secret = process.env.UPLOAD_DELETE_SECRET;
 
   if (!secret || secret.length < 32 || secret === 'replace-with-a-different-long-random-secret') {
-    throw new Error('UPLOAD_DELETE_SECRET must be set to a unique secret with at least 32 characters.');
+    throw new ServiceUnavailableException(
+      '이미지 업로드 보안 설정을 확인하는 중입니다. 잠시 후 다시 시도해 주세요.',
+    );
   }
 
   return secret;
@@ -275,16 +277,24 @@ export class UploadsService {
     const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
     const objectUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${storagePath}`;
 
-    const response = await fetch(objectUrl, {
-      method: 'POST',
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': image.contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-      body: new Blob([this.toArrayBuffer(image.data)], { type: image.contentType }),
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(objectUrl, {
+        method: 'POST',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': image.contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+        body: new Blob([this.toArrayBuffer(image.data)], { type: image.contentType }),
+      });
+    } catch {
+      throw new ServiceUnavailableException(
+        '이미지 업로드 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    }
 
     if (!response.ok) {
       throw new ServiceUnavailableException(
