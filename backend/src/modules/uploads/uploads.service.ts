@@ -297,6 +297,10 @@ export class UploadsService {
     }
 
     if (!response.ok) {
+      console.error('Supabase upload failed', {
+        status: response.status,
+        body: await response.text(),
+      });
       throw new ServiceUnavailableException(
         '이미지 업로드 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
       );
