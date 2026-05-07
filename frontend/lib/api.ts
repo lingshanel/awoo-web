@@ -5,20 +5,24 @@ const CLIENT_API_BASE_URL = '/api';
 type NextFetchInit = RequestInit & {
   next?: {
     revalidate?: number;
+    tags?: string[];
   };
 };
 
 const BOARD_CACHE_SECONDS = 300;
 const THREAD_LIST_CACHE_SECONDS = 10;
 const THREAD_DETAIL_CACHE_SECONDS = 5;
+const BOARD_CACHE_TAG = 'boards';
+const THREAD_LIST_CACHE_TAG = 'thread-lists';
+const THREAD_DETAIL_CACHE_TAG = 'threads';
 
 function getApiBaseUrl() {
   return typeof window === 'undefined' ? SERVER_API_BASE_URL : CLIENT_API_BASE_URL;
 }
 
-function getPublicReadOptions(revalidateSeconds: number): NextFetchInit {
+function getPublicReadOptions(revalidateSeconds: number, tags: string[] = []): NextFetchInit {
   return typeof window === 'undefined'
-    ? { next: { revalidate: revalidateSeconds } }
+    ? { next: { revalidate: revalidateSeconds, tags } }
     : { cache: 'no-store' };
 }
 
@@ -253,7 +257,7 @@ export type AdminBanItem = {
 export async function getBoards() {
   const response = await fetch(
     `${getApiBaseUrl()}/boards`,
-    getPublicReadOptions(BOARD_CACHE_SECONDS),
+    getPublicReadOptions(BOARD_CACHE_SECONDS, [BOARD_CACHE_TAG]),
   );
   return handleResponse<{ items: BoardSummary[]; total: number }>(response);
 }
@@ -266,7 +270,7 @@ export async function getBoardThreads(
 ) {
   const response = await fetch(
     `${getApiBaseUrl()}/boards/${slug}/threads?sort=${sort}&page=${page}&limit=${limit}`,
-    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS),
+    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS, [THREAD_LIST_CACHE_TAG, BOARD_CACHE_TAG]),
   );
   return handleResponse<{
     board: BoardSummary;
@@ -297,7 +301,7 @@ export async function getRecentThreads(
 
   const response = await fetch(
     `${getApiBaseUrl()}/boards/recent/threads?${params.toString()}`,
-    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS),
+    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS, [THREAD_LIST_CACHE_TAG]),
   );
 
   return handleResponse<{
@@ -309,7 +313,7 @@ export async function getRecentThreads(
 export async function getThread(id: number) {
   const response = await fetch(
     `${getApiBaseUrl()}/threads/${id}`,
-    getPublicReadOptions(THREAD_DETAIL_CACHE_SECONDS),
+    getPublicReadOptions(THREAD_DETAIL_CACHE_SECONDS, [THREAD_DETAIL_CACHE_TAG]),
   );
   return handleResponse<ThreadDetail>(response);
 }

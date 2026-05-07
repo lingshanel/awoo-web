@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { revalidateTag } from 'next/cache';
 
 const BACKEND_API_BASE =
   process.env.BACKEND_API_BASE_URL ?? 'http://localhost:4000/api';
@@ -9,6 +10,22 @@ function normalizeApiBaseUrl(value: string) {
     .replace(/^BACKEND_API_BASE_URL\s*=\s*/, '')
     .replace(/^['"]|['"]$/g, '')
     .replace(/\/+$/, '');
+}
+
+function revalidatePublicContent(path: string[], method: string, status: number) {
+  if (method === 'GET' || method === 'HEAD' || status < 200 || status >= 300) {
+    return;
+  }
+
+  const [resource] = path;
+
+  if (!['threads', 'posts', 'admin'].includes(resource)) {
+    return;
+  }
+
+  revalidateTag('boards', { expire: 0 });
+  revalidateTag('thread-lists', { expire: 0 });
+  revalidateTag('threads', { expire: 0 });
 }
 
 async function proxy(request: NextRequest, path: string[]) {
@@ -72,6 +89,7 @@ async function proxy(request: NextRequest, path: string[]) {
     }
 
     responseHeaders.set('cache-control', 'no-store');
+    revalidatePublicContent(path, request.method, response.status);
 
     return new Response(response.body, {
       status: response.status,
