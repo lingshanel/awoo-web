@@ -290,7 +290,13 @@ export class UploadsService {
         },
         body: new Blob([this.toArrayBuffer(image.data)], { type: image.contentType }),
       });
-    } catch {
+    } catch (error) {
+      console.error('Supabase upload request failed', {
+        bucket,
+        storagePath,
+        supabaseUrlHost: new URL(supabaseUrl).host,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw new ServiceUnavailableException(
         '이미지 업로드 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
       );
