@@ -69,17 +69,17 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
   const page = Math.max(1, Number(resolvedSearchParams.page ?? '1') || 1);
 
   try {
-    const boards = await getBoards();
-    const sidebarBoards = [...boards.items, { ...ALL_BOARD, threadCount: 0 }];
-
-    const data =
+    const [boards, data] = await Promise.all([
+      getBoards(),
       slug === 'all'
-        ? await getRecentThreads(sort, THREADS_PER_PAGE, page).then((result) => ({
+        ? getRecentThreads(sort, THREADS_PER_PAGE, page).then((result) => ({
             board: { ...ALL_BOARD, threadCount: result.pagination.total },
             items: result.items,
             pagination: result.pagination,
           }))
-        : await getBoardThreads(slug, sort, page, THREADS_PER_PAGE);
+        : getBoardThreads(slug, sort, page, THREADS_PER_PAGE),
+    ]);
+    const sidebarBoards = [...boards.items, { ...ALL_BOARD, threadCount: 0 }];
 
     if (page > data.pagination.totalPages) {
       redirect(buildBoardHref(slug, sort, data.pagination.totalPages));

@@ -16,8 +16,10 @@ const ALL_BOARD: BoardSummary = {
 };
 
 export default async function HomePage() {
-  const boards = await getBoards();
-  const latestThreads = await getRecentThreads('latest', 8);
+  const [boards, latestThreads] = await Promise.all([
+    getBoards(),
+    getRecentThreads('latest', 8),
+  ]);
   const recentThreads = latestThreads.items.slice(0, 8);
   const displayBoards = [...boards.items, { ...ALL_BOARD, threadCount: latestThreads.pagination.total }];
 

@@ -2,8 +2,24 @@ const SERVER_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api';
 const CLIENT_API_BASE_URL = '/api';
 
+type NextFetchInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+  };
+};
+
+const BOARD_CACHE_SECONDS = 300;
+const THREAD_LIST_CACHE_SECONDS = 10;
+const THREAD_DETAIL_CACHE_SECONDS = 5;
+
 function getApiBaseUrl() {
   return typeof window === 'undefined' ? SERVER_API_BASE_URL : CLIENT_API_BASE_URL;
+}
+
+function getPublicReadOptions(revalidateSeconds: number): NextFetchInit {
+  return typeof window === 'undefined'
+    ? { next: { revalidate: revalidateSeconds } }
+    : { cache: 'no-store' };
 }
 
 function getCookieValue(name: string) {
@@ -231,9 +247,10 @@ export type AdminBanItem = {
 };
 
 export async function getBoards() {
-  const response = await fetch(`${getApiBaseUrl()}/boards`, {
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    `${getApiBaseUrl()}/boards`,
+    getPublicReadOptions(BOARD_CACHE_SECONDS),
+  );
   return handleResponse<{ items: BoardSummary[]; total: number }>(response);
 }
 
@@ -245,9 +262,7 @@ export async function getBoardThreads(
 ) {
   const response = await fetch(
     `${getApiBaseUrl()}/boards/${slug}/threads?sort=${sort}&page=${page}&limit=${limit}`,
-    {
-      cache: 'no-store',
-    },
+    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS),
   );
   return handleResponse<{
     board: BoardSummary;
@@ -278,9 +293,7 @@ export async function getRecentThreads(
 
   const response = await fetch(
     `${getApiBaseUrl()}/boards/recent/threads?${params.toString()}`,
-    {
-      cache: 'no-store',
-    },
+    getPublicReadOptions(THREAD_LIST_CACHE_SECONDS),
   );
 
   return handleResponse<{
@@ -290,9 +303,10 @@ export async function getRecentThreads(
 }
 
 export async function getThread(id: number) {
-  const response = await fetch(`${getApiBaseUrl()}/threads/${id}`, {
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    `${getApiBaseUrl()}/threads/${id}`,
+    getPublicReadOptions(THREAD_DETAIL_CACHE_SECONDS),
+  );
   return handleResponse<ThreadDetail>(response);
 }
 

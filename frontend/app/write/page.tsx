@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { WriteThreadForm } from '@/components/write-thread-form';
 import { getBoards } from '@/lib/api';
 
@@ -11,7 +12,9 @@ export default async function WritePage() {
           <span className="label">[WRITE]</span>
           <span>익명 작성 흐름과 업로드 동작을 반영한 실제 스레드 작성 페이지입니다.</span>
         </div>
-        <WriteThreadForm boards={boards.items} />
+        <Suspense fallback={null}>
+          <WriteThreadForm boards={boards.items} />
+        </Suspense>
       </main>
       <aside className="sidebar">
         <div className="sidebar-widget">
