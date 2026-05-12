@@ -605,6 +605,14 @@ export async function adminHideTarget(
   return handleResponse<{ message: string }>(response);
 }
 
+export async function adminDeleteTarget(
+  target: 'thread' | 'post',
+  id: number,
+  reason = 'admin delete',
+) {
+  return adminHideTarget(target, id, reason);
+}
+
 export async function adminResolveReport(
   id: number,
   hideTarget: boolean,

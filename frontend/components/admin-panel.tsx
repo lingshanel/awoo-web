@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
+  adminDeleteTarget,
   adminHideTarget,
   adminLogin,
   adminLogout,
@@ -84,6 +85,8 @@ export function AdminPanel() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [deleteTargetType, setDeleteTargetType] = useState<'thread' | 'post'>('thread');
+  const [deleteTargetId, setDeleteTargetId] = useState('');
 
   useEffect(() => {
     async function restoreSession() {
@@ -208,6 +211,67 @@ export function AdminPanel() {
     } catch (hideError) {
       setStatus(null);
       setError(hideError instanceof Error ? hideError.message : '숨김 처리에 실패했습니다.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleDeleteReportTarget(report: ReportItem) {
+    const targetType = report.targetType === 'THREAD' ? 'thread' : 'post';
+    const targetId = report.targetType === 'THREAD' ? report.threadId : report.postId;
+
+    if (!targetId) {
+      setStatus(null);
+      setError('삭제할 대상 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    if (!window.confirm('이 대상을 삭제 처리할까요? 사용자 화면에서는 보이지 않게 됩니다.')) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      await adminDeleteTarget(targetType, targetId, `report #${report.id} admin delete`);
+      await adminResolveReport(report.id, false);
+      await loadDashboard(filter);
+      setStatus('대상 삭제 처리가 완료되었습니다.');
+    } catch (deleteError) {
+      setStatus(null);
+      setError(deleteError instanceof Error ? deleteError.message : '삭제 처리에 실패했습니다.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleDirectDelete() {
+    const id = Number(deleteTargetId);
+    if (!Number.isInteger(id) || id <= 0) {
+      setStatus(null);
+      setError('삭제할 글 번호를 숫자로 입력해 주세요.');
+      return;
+    }
+
+    const label = deleteTargetType === 'thread' ? '게시글' : '댓글';
+    if (!window.confirm(`${label} #${id}을 삭제 처리할까요? 사용자 화면에서는 보이지 않게 됩니다.`)) {
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      await adminDeleteTarget(deleteTargetType, id, 'manual admin delete');
+      setDeleteTargetId('');
+      await loadDashboard(filter);
+      setStatus(`${label} #${id} 삭제 처리가 완료되었습니다.`);
+    } catch (deleteError) {
+      setStatus(null);
+      setError(deleteError instanceof Error ? deleteError.message : '삭제 처리에 실패했습니다.');
     } finally {
       setPending(false);
     }
@@ -473,6 +537,14 @@ export function AdminPanel() {
                     바로 숨김
                   </button>
                   <button
+                    className="reaction-btn danger"
+                    disabled={pending || target.isDeleted}
+                    type="button"
+                    onClick={() => handleDeleteReportTarget(report)}
+                  >
+                    삭제 처리
+                  </button>
+                  <button
                     className="reaction-btn"
                     disabled={pending || !target.authorHash}
                     type="button"
@@ -501,6 +573,40 @@ export function AdminPanel() {
       </section>
 
       <section className="admin-tools-grid">
+        <div className="report-item admin-report-card">
+          <div className="section-header">글 삭제</div>
+          <div className="thread-preview">
+            신고 목록에 없는 글도 번호로 삭제 처리할 수 있습니다. 사용자 화면에서는 숨김 상태로 전환되고 관리 로그가 남습니다.
+          </div>
+          <div className="admin-delete-fields">
+            <select
+              aria-label="삭제 대상"
+              value={deleteTargetType}
+              onChange={(event) => setDeleteTargetType(event.target.value as 'thread' | 'post')}
+            >
+              <option value="thread">게시글</option>
+              <option value="post">댓글</option>
+            </select>
+            <input
+              aria-label="삭제할 번호"
+              inputMode="numeric"
+              min="1"
+              placeholder="번호 입력"
+              type="number"
+              value={deleteTargetId}
+              onChange={(event) => setDeleteTargetId(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  void handleDirectDelete();
+                }
+              }}
+            />
+            <button className="reaction-btn danger solid" disabled={pending} type="button" onClick={handleDirectDelete}>
+              삭제 처리
+            </button>
+          </div>
+        </div>
+
         <div className="report-item admin-report-card">
           <div className="section-header">차단 목록</div>
           {bans.length ? (

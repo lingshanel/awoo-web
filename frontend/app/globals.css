@@ -2181,6 +2181,32 @@ select {
   border-color: rgba(255, 63, 110, 0.5);
 }
 
+.admin-delete-fields {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.7fr) minmax(120px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-delete-fields input,
+.admin-delete-fields select {
+  min-width: 0;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 8px 10px;
+  color: var(--text-main);
+  font-family: var(--font-kr);
+  font-size: 13px;
+  outline: none;
+}
+
+.admin-delete-fields input:focus,
+.admin-delete-fields select:focus {
+  border-color: rgba(255, 63, 110, 0.5);
+}
+
 .admin-report-top,
 .admin-target-title {
   display: flex;
@@ -2471,7 +2497,8 @@ select {
   }
 
   .admin-security-strip,
-  .admin-password-fields {
+  .admin-password-fields,
+  .admin-delete-fields {
     grid-template-columns: 1fr;
   }
 
