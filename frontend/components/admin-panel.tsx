@@ -104,6 +104,7 @@ export function AdminPanel() {
   async function loadDashboard(nextFilter = filter) {
     setPending(true);
     setError(null);
+    setStatus(null);
 
     try {
       const [summaryResult, reportResult, logsResult, bansResult] = await Promise.all([
@@ -117,9 +118,13 @@ export function AdminPanel() {
       setReports(reportResult.items);
       setLogs(logsResult.items);
       setBans(bansResult.items);
-      setStatus(`신고 ${reportResult.total}건을 불러왔습니다.`);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : '관리자 데이터를 불러오지 못했습니다.');
+      const message = loadError instanceof Error ? loadError.message : '관리자 데이터를 불러오지 못했습니다.';
+      if (message.includes('관리자 로그인') || message.includes('관리자 세션')) {
+        setUser(null);
+      }
+      setStatus(null);
+      setError(message);
     } finally {
       setPending(false);
     }
@@ -134,9 +139,11 @@ export function AdminPanel() {
       const result = await adminLogin(username, password);
       setUser(result.user);
       setPassword('');
-      setStatus(result.message);
       await loadDashboard(filter);
+      setError(null);
+      setStatus(result.message);
     } catch (loginError) {
+      setStatus(null);
       setError(loginError instanceof Error ? loginError.message : '로그인에 실패했습니다.');
     } finally {
       setPending(false);
@@ -156,6 +163,7 @@ export function AdminPanel() {
       setBans([]);
       setStatus(null);
     } catch (logoutError) {
+      setStatus(null);
       setError(logoutError instanceof Error ? logoutError.message : '로그아웃에 실패했습니다.');
     } finally {
       setPending(false);
@@ -174,7 +182,9 @@ export function AdminPanel() {
     try {
       await adminResolveReport(reportId, hideTarget);
       await loadDashboard(filter);
+      setStatus(hideTarget ? '신고 대상 숨김과 해결 처리가 완료되었습니다.' : '신고 해결 처리가 완료되었습니다.');
     } catch (resolveError) {
+      setStatus(null);
       setError(resolveError instanceof Error ? resolveError.message : '신고 처리에 실패했습니다.');
     } finally {
       setPending(false);
@@ -194,7 +204,9 @@ export function AdminPanel() {
       }
       await adminResolveReport(report.id, false);
       await loadDashboard(filter);
+      setStatus('대상 숨김 처리가 완료되었습니다.');
     } catch (hideError) {
+      setStatus(null);
       setError(hideError instanceof Error ? hideError.message : '숨김 처리에 실패했습니다.');
     } finally {
       setPending(false);
@@ -207,6 +219,7 @@ export function AdminPanel() {
     reason: string,
   ) {
     if (!valueHash) {
+      setStatus(null);
       setError('차단할 해시 정보가 없습니다.');
       return;
     }
@@ -222,7 +235,9 @@ export function AdminPanel() {
         expiresInHours: 24 * 7,
       });
       await loadDashboard(filter);
+      setStatus('차단 등록이 완료되었습니다.');
     } catch (banError) {
+      setStatus(null);
       setError(banError instanceof Error ? banError.message : '차단 등록에 실패했습니다.');
     } finally {
       setPending(false);
@@ -236,7 +251,9 @@ export function AdminPanel() {
     try {
       await revokeAdminBan(id);
       await loadDashboard(filter);
+      setStatus('차단 해제가 완료되었습니다.');
     } catch (banError) {
+      setStatus(null);
       setError(banError instanceof Error ? banError.message : '차단 해제에 실패했습니다.');
     } finally {
       setPending(false);
@@ -253,6 +270,7 @@ export function AdminPanel() {
       setNewPassword('');
       setStatus(result.message);
     } catch (passwordError) {
+      setStatus(null);
       setError(passwordError instanceof Error ? passwordError.message : '비밀번호 변경에 실패했습니다.');
     } finally {
       setPending(false);

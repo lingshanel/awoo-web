@@ -28,6 +28,21 @@ function revalidatePublicContent(path: string[], method: string, status: number)
   revalidateTag('threads', { expire: 0 });
 }
 
+function appendSetCookieHeaders(from: Response, to: Headers) {
+  const getSetCookie = (from.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie;
+  const cookies = typeof getSetCookie === 'function' ? getSetCookie.call(from.headers) : [];
+
+  if (cookies.length) {
+    cookies.forEach((cookie) => to.append('set-cookie', cookie));
+    return;
+  }
+
+  const setCookie = from.headers.get('set-cookie');
+  if (setCookie) {
+    to.append('set-cookie', setCookie);
+  }
+}
+
 async function proxy(request: NextRequest, path: string[]) {
   let targetUrl: URL;
 
@@ -88,6 +103,7 @@ async function proxy(request: NextRequest, path: string[]) {
       responseHeaders.set('content-type', contentType);
     }
 
+    appendSetCookieHeaders(response, responseHeaders);
     responseHeaders.set('cache-control', 'no-store');
     revalidatePublicContent(path, request.method, response.status);
 
