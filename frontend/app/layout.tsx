@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AdSlot } from '@/components/ad-slot';
+import { ColdStartNotice } from '@/components/cold-start-notice';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default function RootLayout({
         <div className="ad-banner-top">
           <AdSlot variant="top" />
         </div>
+        <ColdStartNotice />
         <div className="shell">{children}</div>
         <footer className="footer">
           <div className="ad-banner-footer">
