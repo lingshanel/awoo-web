@@ -10,8 +10,8 @@ type NextFetchInit = RequestInit & {
 };
 
 const BOARD_CACHE_SECONDS = 300;
-const THREAD_LIST_CACHE_SECONDS = 10;
-const THREAD_DETAIL_CACHE_SECONDS = 5;
+const THREAD_LIST_CACHE_SECONDS = 60;
+const THREAD_DETAIL_CACHE_SECONDS = 15;
 const BOARD_CACHE_TAG = 'boards';
 const THREAD_LIST_CACHE_TAG = 'thread-lists';
 const THREAD_DETAIL_CACHE_TAG = 'threads';

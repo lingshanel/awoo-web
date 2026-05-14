@@ -3,10 +3,12 @@ import { Prisma } from '@prisma/client';
 import { buildPagination, getSkip } from 'src/common/utils/pagination';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { toThreadListItem } from '../threads/threads.mapper';
-import { THREAD_INCLUDE } from '../threads/threads.types';
+import { THREAD_LIST_INCLUDE } from '../threads/threads.types';
 import { BoardThreadsQueryDto } from './dto/board-threads-query.dto';
 import { RecentThreadsQueryDto } from './dto/recent-threads-query.dto';
 import { isHotThread } from './thread-heat';
+
+const HOT_LOOKAHEAD_LIMIT = 80;
 
 @Injectable()
 export class BoardsService {
@@ -57,6 +59,10 @@ export class BoardsService {
     const latestThreads = normalThreads.filter((thread) => !promotedHotIds.has(thread.id));
 
     return [...pinnedThreads, ...hotThreads, ...latestThreads];
+  }
+
+  private getLatestCandidateLimit(page: number, limit: number) {
+    return Math.max(getSkip(page, limit) + limit, HOT_LOOKAHEAD_LIMIT);
   }
 
   async getBoards() {
@@ -146,15 +152,16 @@ export class BoardsService {
         ? await this.prisma.$transaction([
             this.prisma.thread.findMany({
               where,
-              include: THREAD_INCLUDE,
+              include: THREAD_LIST_INCLUDE,
               orderBy: this.getThreadOrder('latest'),
+              take: this.getLatestCandidateLimit(page, limit),
             }),
             this.prisma.thread.count({ where }),
           ])
         : await this.prisma.$transaction([
             this.prisma.thread.findMany({
               where,
-              include: THREAD_INCLUDE,
+              include: THREAD_LIST_INCLUDE,
               orderBy: this.getThreadOrder(query.sort),
               skip: getSkip(page, limit),
               take: limit,
@@ -205,15 +212,16 @@ export class BoardsService {
         ? await this.prisma.$transaction([
             this.prisma.thread.findMany({
               where,
-              include: THREAD_INCLUDE,
+              include: THREAD_LIST_INCLUDE,
               orderBy: this.getThreadOrder('latest'),
+              take: this.getLatestCandidateLimit(page, limit),
             }),
             this.prisma.thread.count({ where }),
           ])
         : await this.prisma.$transaction([
             this.prisma.thread.findMany({
               where,
-              include: THREAD_INCLUDE,
+              include: THREAD_LIST_INCLUDE,
               orderBy: this.getThreadOrder(query.sort),
               skip: getSkip(page, limit),
               take: limit,

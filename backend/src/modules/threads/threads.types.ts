@@ -32,3 +32,8 @@ export const THREAD_INCLUDE = Prisma.validator<Prisma.ThreadInclude>()({
     },
   },
 });
+
+export const THREAD_LIST_INCLUDE = Prisma.validator<Prisma.ThreadInclude>()({
+  board: true,
+  attachments: true,
+});
