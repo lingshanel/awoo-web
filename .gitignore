@@ -15,8 +15,14 @@ frontend/*-mobile.png
 
 # local env files
 .env
-.env.local
+.env.*
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 frontend/.env.local
 
 # runtime uploads and logs
