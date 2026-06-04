@@ -90,6 +90,12 @@ Render / NestJS API
 
 프론트엔드는 Next.js API route를 proxy로 사용합니다. 브라우저가 백엔드 서버를 직접 호출하지 않고 `/api/*` 경로를 통해 요청하도록 구성했습니다. 공개 읽기 요청은 짧은 캐시를 적용하고, 글/댓글 작성 같은 변경 요청이 발생하면 관련 cache tag를 revalidate하여 최신 데이터가 빠르게 반영되도록 했습니다.
 
+## 문서
+
+- [ERD](./docs/ERD.md)
+- [API 명세](./docs/API_SPEC.md)
+- [트러블슈팅 기록](./docs/TROUBLESHOOTING.md)
+
 ## 백엔드 구현 포인트
 
 - Prisma schema 기반 게시판, 스레드, 댓글, 첨부파일, 신고, 관리자 세션 모델링
